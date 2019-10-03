@@ -2,23 +2,45 @@
   "name": "form-validate.js",
   "version": "1.0.1",
   "description": "Form validation library",
-  "main": "dist/form-validate.js",
+  "author": "Joshua Uyi <joshuaouyi@gmail.com>",
+  "main": "lib/form-validate.js",
+  "types": "lib/form-validate.d.ts",
   "scripts": {
-    "start": "tsc ",
-    "watch": "tsc --watch"
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "test": "jest --config jestconfig.json",
+    "lint": "tslint -p tsconfig.json",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test && npm run lint",
+    "preversion": "npm run lint",
+    "version": "npm run format && git add -A src",
+    "postversion": "git push && git push --tags"
   },
+  "files": [
+    "lib/**/*"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/josh-wer/form-validate.js"
+  },
+  "keywords": [
+    "form",
+    "validator"
+  ],
   "devDependencies": {
-    "@babel/cli": "^7.2.3",
-    "@babel/core": "^7.4.0",
-    "@babel/plugin-proposal-class-properties": "^7.4.0",
+    "@babel/cli": "^7.6.2",
+    "@babel/core": "^7.6.2",
+    "@babel/plugin-proposal-class-properties": "^7.5.5",
     "@babel/plugin-proposal-numeric-separator": "^7.2.0",
-    "@babel/plugin-proposal-object-rest-spread": "^7.4.0",
-    "@babel/preset-env": "^7.4.1",
+    "@babel/plugin-proposal-object-rest-spread": "^7.6.2",
+    "@babel/preset-env": "^7.6.2",
     "@babel/preset-typescript": "^7.6.0",
+    "@types/jest": "^24.0.18",
+    "jest": "^24.9.0",
+    "ts-jest": "^24.1.0",
     "tslint": "^5.20.0",
     "typescript": "^3.6.3"
   },
-  "author": "Joshua Uyi <joshuaouyi@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "validate.js": "^0.13.1"

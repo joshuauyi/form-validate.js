@@ -75,7 +75,7 @@ class FormValidate {
                 } else {
                     // validate all fields
                     for (const inputKey of this.considered) {
-                        this.inputs[inputKey].updateValues(inputKey === name, validationErrors[inputKey] || {});
+                        this.inputs[inputKey].updateValues(inputKey === name, validationErrors[inputKey] || []);
                     }
                     this.firstValidateDone = true;
                 }
