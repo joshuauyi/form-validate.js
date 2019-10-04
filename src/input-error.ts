@@ -1,25 +1,32 @@
 class InputError {
-    touched = false;
-    errors: string[] = [];
+  public touched = false;
+  public errors: string[] = [];
 
-    constructor(touched = false, errors = []) {
-        this.touched = touched;
-        this.errors = errors;
-    }
+  constructor(touched = false, errors = []) {
+    this.touched = touched;
+    this.errors = errors;
+  }
 
-    setTouched(touched: boolean) {
-        this.touched = touched;
-    }
+  public setTouched(touched: boolean) {
+    this.touched = touched;
+  }
 
-    updateValues(touched: boolean, errors: string[]) {
-        this.touched = touched;
-        this.errors = errors;
-    }
+  public setErrors(errors: string[]) {
+    this.errors = errors;
+  }
 
-    hasError() {
-        return this.errors.length > 0;
-    }
+  public updateValues(touched: boolean, errors: string[]) {
+    this.touched = touched;
+    this.errors = errors;
+  }
 
+  public hasError() {
+    return this.errors.length > 0;
+  }
+
+  public touchedAndHasError() {
+    return this.touched && this.hasError();
+  }
 }
 
 export default InputError;
