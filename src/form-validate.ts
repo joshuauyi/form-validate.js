@@ -9,82 +9,100 @@ import InputError from './input-error';
 import { IFormInputsMap, IFormRulesMap, IFormValuesMap } from './models';
 
 class FormValidate {
+  public inputs: IFormInputsMap = {};
+  private options: ValidateOption = {};
+  private considered: string[] = [];
+  private rules: IFormRulesMap = {};
+  private values: IFormValuesMap = {};
+  private valid = false;
 
-    private options: ValidateOption = {};
-    private considered: string[] = [];
-    inputs: IFormInputsMap = {};
-    private rules: IFormRulesMap = {};
-    private values: IFormValuesMap = {};
-    private valid = false;
-    private firstValidateDone = false;
+  constructor(rules: IFormRulesMap, options: ValidateOption = {}, defaultValues: IFormValuesMap = {}) {
+    this.rules = rules;
+    this.options = options;
+    this.considered = Object.keys(rules);
 
-    constructor(rules: IFormRulesMap, options: ValidateOption = {}, defaultValues: IFormValuesMap = {}) {
-        this.rules = rules;
-        this.options = options;
-        this.considered = Object.keys(rules);
+    this.valid = true;
+    for (const key of this.considered) {
+      this.inputs[key] = new InputError();
+      this.values[key] = defaultValues[key] || null;
+    }
 
-        for (const key of this.considered) {
-            this.inputs[key] = new InputError();
-            this.values[key] = defaultValues[key] || null;
+    // validate all fields
+    const validationErrors = validate(this.values, this.rules, this.options);
+    this.valid = !validationErrors;
+    if (validationErrors) {
+      for (const inputKey of this.considered) {
+        this.inputs[inputKey].setErrors(validationErrors[inputKey] || []);
+      }
+    }
+  }
+
+  public get(inputName: string) {
+    return this.inputs[inputName] || null;
+  }
+
+  public getInputs() {
+    return this.inputs;
+  }
+
+  public getValid() {
+    return this.valid;
+  }
+
+  public touchAll(callback: (valid: boolean) => void) {
+    this._toggleTouchedWithCallback(true, callback);
+  }
+
+  public unTouchAll(callback: (valid: boolean) => void) {
+    this._toggleTouchedWithCallback(false, callback);
+  }
+
+  public validate(nativeEvent: { [key: string]: any }, callback: ((valid: boolean) => void) | null = null) {
+    const { target: input } = nativeEvent;
+    const { name, type } = input || {};
+    let { value } = input || {};
+
+    if (!this.considered.includes(name)) {
+      return;
+    }
+
+    if (type === 'checkbox' && input.checked === false) {
+      value = null;
+    }
+    if (('' + value).trim() === '') {
+      value = null;
+    }
+    this.values = { ...this.values, [name]: value };
+
+    validate
+      .async(this.values, this.rules, this.options)
+      .then(() => {
+        this.inputs[name].updateValues(true, []);
+        this.valid = true;
+      })
+      .catch(validationErrors => {
+        if (validationErrors instanceof Error) {
+          throw Error;
         }
-    }
 
-    get(inputName: string) {
-        return this.inputs[inputName];
-    }
-
-    getInputs() {
-        return this.inputs;
-    }
-
-    touchAll() {
-        for (const inputKey of Object.keys(this.inputs)) {
-            this.inputs[inputKey].setTouched(true);
+        // validate currentlly change field
+        this.inputs[name].updateValues(true, validationErrors[name] || []);
+        this.valid = false;
+      })
+      .finally(() => {
+        if (callback) {
+          callback(this.valid);
         }
+      });
+  }
+
+  private _toggleTouchedWithCallback(touchedState: boolean, callback: (valid: boolean) => void) {
+    for (const inputKey of this.considered) {
+      this.inputs[inputKey].setTouched(touchedState);
     }
-
-    validate(nativeEvent: { [key: string]: any }, callback: (valid: boolean) => void, values: IFormValuesMap | null = null) {
-        const { target: input } = nativeEvent;
-        const { name, type } = input || {};
-        let { value } = input || {};
-
-        // use values user specifies, otherwise use values from the form
-        if (values) {
-            this.values = values;
-        } else {
-            if (!this.considered.includes(name)) { return; }
-
-            if (type === 'checkbox' && input.checked === false) { value = null; }
-            if (('' + value).trim() === '') { value = null; }
-            this.values = { ...this.values, [name]: value };
-        }
-
-        validate.async(this.values, this.rules, this.options)
-            .then(() => {
-                this.inputs[name].updateValues(true, []);
-                this.valid = true;
-            })
-            .catch((validationErrors) => {
-                if (validationErrors instanceof Error) {
-                    throw Error;
-                }
-
-                if (this.firstValidateDone) {
-                    // validate currentlly change field
-                    this.inputs[name].updateValues(true, validationErrors[name] || []);
-                } else {
-                    // validate all fields
-                    for (const inputKey of this.considered) {
-                        this.inputs[inputKey].updateValues(inputKey === name, validationErrors[inputKey] || []);
-                    }
-                    this.firstValidateDone = true;
-                }
-                this.valid = false;
-            })
-            .finally(() => {
-                if (callback) { callback(this.valid); }
-            });
+    if (callback) {
+      callback(this.valid);
     }
-
+  }
 }
 export default FormValidate;

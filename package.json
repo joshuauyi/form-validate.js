@@ -1,6 +1,6 @@
 {
   "name": "form-validate.js",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "Form validation library",
   "author": "Joshua Uyi <joshuaouyi@gmail.com>",
   "main": "lib/form-validate.js",
@@ -9,6 +9,8 @@
     "build": "tsc",
     "watch": "tsc --watch",
     "test": "jest --config jestconfig.json",
+    "test-watch": "jest --config jestconfig.json --watch",
+    "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
     "lint": "tslint -p tsconfig.json",
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run lint",
@@ -37,8 +39,10 @@
     "@babel/preset-typescript": "^7.6.0",
     "@types/jest": "^24.0.18",
     "jest": "^24.9.0",
+    "prettier": "^1.18.2",
     "ts-jest": "^24.1.0",
     "tslint": "^5.20.0",
+    "tslint-config-prettier": "^1.18.0",
     "typescript": "^3.6.3"
   },
   "license": "MIT",
