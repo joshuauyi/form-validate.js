@@ -57,7 +57,7 @@ class FormValidate {
     this._toggleTouchedWithCallback(false, callback);
   }
 
-  public validate(nativeEvent: { [key: string]: any }, callback: ((valid: boolean) => void)|null = null) {
+  public validate(nativeEvent: { [key: string]: any }, callback: ((valid: boolean) => void) | null = null) {
     const { target: input } = nativeEvent;
     const { name, type } = input || {};
     let { value } = input || {};
@@ -73,8 +73,9 @@ class FormValidate {
       value = null;
     }
     this.values = { ...this.values, [name]: value };
-    
-    validate.async(this.values, this.rules, this.options)
+
+    validate
+      .async(this.values, this.rules, this.options)
       .then(() => {
         this.inputs[name].updateValues(true, []);
         this.valid = true;
@@ -99,7 +100,9 @@ class FormValidate {
     for (const inputKey of this.considered) {
       this.inputs[inputKey].setTouched(touchedState);
     }
-    if (callback) { callback(this.valid); }
+    if (callback) {
+      callback(this.valid);
+    }
   }
 }
 export default FormValidate;

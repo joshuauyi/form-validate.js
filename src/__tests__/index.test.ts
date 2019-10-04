@@ -1,36 +1,44 @@
 import FormValidate from '../form-validate';
 
 describe('FormValidate instance check', () => {
-  const validator = new FormValidate({
-    username: {
-      presence: true
+  const validator = new FormValidate(
+    {
+      username: {
+        presence: true,
+      },
+      password: {
+        presence: true,
+        length: {
+          minimum: 6,
+        },
+      },
     },
-    password: {
-      presence: true,
-      length: {
-        minimum: 6
-      }
-    },
-  }, {}, { username: 'john', password: 'password' });
+    {},
+    { username: 'john', password: 'password' },
+  );
 
-  const initFalseValidator = new FormValidate({
-    username: {
-      presence: true
+  const initFalseValidator = new FormValidate(
+    {
+      username: {
+        presence: true,
+      },
+      password: {
+        presence: true,
+        length: {
+          minimum: 6,
+        },
+      },
     },
-    password: {
-      presence: true,
-      length: {
-        minimum: 6
-      }
-    },
-  }, {}, { username: 'john' });
+    {},
+    { username: 'john' },
+  );
 
   test('is instance of FormValidate', () => {
     expect(validator).toBeInstanceOf(FormValidate);
   });
 
   test('validates successfully', () => {
-    validator.validate({ target: { name: 'username', value: 'Jane' } }, (isValid) => {
+    validator.validate({ target: { name: 'username', value: 'Jane' } }, isValid => {
       expect(isValid).toBeTruthy();
     });
   });
@@ -46,9 +54,8 @@ describe('FormValidate instance check', () => {
   });
 
   test('empty values should be false', () => {
-    validator.validate({ target: { name: 'username', value: '  ' } }, (isValid) => {
+    validator.validate({ target: { name: 'username', value: '  ' } }, isValid => {
       expect(isValid).toBeFalsy();
     });
   });
-
 });
