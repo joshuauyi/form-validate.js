@@ -9,14 +9,20 @@ import InputError from './input-error';
 import { IFormInputsMap, IFormRulesMap, IFormValuesMap } from './models';
 
 validate.validators.custom = (value: any, options: any, key: any, attributes: any) => {
-  if (!options) { return null; }
+  if (!options) {
+    return null;
+  }
 
-  if (typeof options !== 'object') { options = { message: options }; }
+  if (typeof options !== 'object') {
+    options = { message: options };
+  }
 
-  if (typeof options.message !== 'function' && options.message.indexOf('^') !== 0) { options.message = '^' + options.message; }
+  if (typeof options.message !== 'function' && options.message.indexOf('^') !== 0) {
+    options.message = '^' + options.message;
+  }
 
   return options.message || null;
-}
+};
 
 class FormValidate {
   public inputs: IFormInputsMap = {};
@@ -36,7 +42,9 @@ class FormValidate {
     for (const key of this.considered) {
       this.inputs[key] = new InputError();
       this.values[key] = defaultValues[key] || null;
-      if (this.rules[key].custom) { this.customRuleKeys[this.customRuleKeys.length] = key; }
+      if (this.rules[key].custom) {
+        this.customRuleKeys[this.customRuleKeys.length] = key;
+      }
     }
 
     // validate all fields
@@ -99,8 +107,8 @@ class FormValidate {
         // validate currentlly change field
         this.inputs[name].updateValues(true, validationErrors[name] || []);
 
-        // update errors of all 
-        for (const key of this.customRuleKeys){
+        // update errors of all
+        for (const key of this.customRuleKeys) {
           this.inputs[key].setErrors(validationErrors[key] || []);
         }
 
