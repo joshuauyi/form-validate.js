@@ -9,5 +9,5 @@ export interface IFormValuesMap {
 }
 
 export interface IFormRulesMap {
-  [key: string]: {};
+  [key: string]: { [key: string]: any };
 }

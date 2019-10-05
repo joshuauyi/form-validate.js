@@ -8,11 +8,22 @@ import validate, { ValidateOption } from 'validate.js';
 import InputError from './input-error';
 import { IFormInputsMap, IFormRulesMap, IFormValuesMap } from './models';
 
+validate.validators.custom = (value: any, options: any, key: any, attributes: any) => {
+  if (!options) { return null; }
+
+  if (typeof options !== 'object') { options = { message: options }; }
+
+  if (typeof options.message !== 'function' && options.message.indexOf('^') !== 0) { options.message = '^' + options.message; }
+
+  return options.message || null;
+}
+
 class FormValidate {
   public inputs: IFormInputsMap = {};
   private options: ValidateOption = {};
   private considered: string[] = [];
   private rules: IFormRulesMap = {};
+  private customRuleKeys: string[] = [];
   private values: IFormValuesMap = {};
   private valid = false;
 
@@ -25,6 +36,7 @@ class FormValidate {
     for (const key of this.considered) {
       this.inputs[key] = new InputError();
       this.values[key] = defaultValues[key] || null;
+      if (this.rules[key].custom) { this.customRuleKeys[this.customRuleKeys.length] = key; }
     }
 
     // validate all fields
@@ -84,9 +96,14 @@ class FormValidate {
         if (validationErrors instanceof Error) {
           throw Error;
         }
-
         // validate currentlly change field
         this.inputs[name].updateValues(true, validationErrors[name] || []);
+
+        // update errors of all 
+        for (const key of this.customRuleKeys){
+          this.inputs[key].setErrors(validationErrors[key] || []);
+        }
+
         this.valid = false;
       })
       .finally(() => {
