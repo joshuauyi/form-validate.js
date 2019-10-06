@@ -1,6 +1,6 @@
 {
   "name": "form-validate.js",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Form validation library",
   "author": "Joshua Uyi <joshuaouyi@gmail.com>",
   "main": "lib/form-validate.js",
