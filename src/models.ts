@@ -1,4 +1,4 @@
-import { AsyncValidateOption, ValidateOption} from 'validate.js';
+import { AsyncValidateOption, ValidateOption } from 'validate.js';
 import ControlError from './control-error';
 
 export interface IFormControlsMap {

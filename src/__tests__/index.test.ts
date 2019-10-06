@@ -60,7 +60,11 @@ describe('FormValidate instance check', () => {
   });
 
   test('adds attributes with custom rule to customRules array', () => {
-    const v2 = new FormValidate({ name: { presence: true }, gender: { custom: 'should be selected' }, age: { custom: '18 and above' } });
+    const v2 = new FormValidate({
+      name: { presence: true },
+      gender: { custom: 'should be selected' },
+      age: { custom: '18 and above' },
+    });
 
     // tslint:disable-next-line: no-string-literal
     expect(v2['customRuleKeys'].length).toBe(2);

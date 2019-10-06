@@ -73,7 +73,10 @@ class FormValidate {
     this._toggleTouchedWithCallback(false, callback);
   }
 
-  public validate(nativeEvent: { [key: string]: any }, callback: ((valid: boolean, controls: IFormControlsMap) => void) | null = null) {
+  public validate(
+    nativeEvent: { [key: string]: any },
+    callback: ((valid: boolean, controls: IFormControlsMap) => void) | null = null,
+  ) {
     const { target: control } = nativeEvent;
     const { name, type } = control || {};
     let { value } = control || {};
