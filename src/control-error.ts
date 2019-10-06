@@ -1,4 +1,4 @@
-class InputError {
+class ControlError {
   public touched = false;
   public errors: string[] = [];
 
@@ -29,4 +29,4 @@ class InputError {
   }
 }
 
-export default InputError;
+export default ControlError;

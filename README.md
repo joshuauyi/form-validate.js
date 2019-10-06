@@ -63,17 +63,17 @@ Ensure the name of the input field corresponds to the object key in the validati
 ```javascript
 <input type="text" name="username" />
 ```
-> the validation instance has an inputs property  `validator.inputs` that holds the input error object of each field. The input error object has two important fields
+> the validation instance has a controls property  `validator.controls` that holds the control error object of each field. The control error object has two important fields
 > - **errors** - an array holding all validation errors of the field
-> - **touched** - indicating if the input field has been interacted with
+> - **touched** - indicating if the control field has been interacted with
 
  getting a reference to the username and password field can be done thus
 ```javascript
-const usernameErrors = validator.inputs.username.errors
+const usernameErrors = validator.controls.username.errors
 ```
  same can be done to access the touched property
 ```javascript
-const usernameTouched = validator.inputs.username.touched
+const usernameTouched = validator.controls.username.touched
 ```
 The errors can be displayed in a react app as follows
 ```javascript
@@ -139,19 +139,19 @@ class MyComponent extends React.Component {
 	}
 
 	render() {
-		// destructure out the inputs property
-		const { inputs } = validator;
+		// destructure out the controls property
+		const { controls } = validator;
 		return (
 			<div>
 				<form onChange={this.validateForm} onSubmit={this.onSubmit}>
 					<input type="text" name="username" />
 					{/* display all username errors if field touched */}
-					<div>{inputs.username.touched && inputs.username.errors.map((error, i) => (
+					<div>{controls.username.touched && controls.username.errors.map((error, i) => (
 						<div  key={i}>{error}</div>
 					))}</div>
 					<input type="password" name="password" />
 					{/* display first password error at all times if any exists */}
-					<div>{inputs.password.errors[0]}</div>
+					<div>{controls.password.errors[0]}</div>
 					{/* disable submit button based on the form valid state */}
 					<button disabled={!this.state.valid}>Submit</button>
 				</form>

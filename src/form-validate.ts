@@ -4,9 +4,9 @@
  * (c) 2019 Joshua Uyi
  */
 
-import validate, { ValidateOption } from 'validate.js';
-import InputError from './input-error';
-import { IFormInputsMap, IFormRulesMap, IFormValuesMap } from './models';
+import validate from 'validate.js';
+import ControlError from './control-error';
+import { IFormControlsMap, IFormRulesMap, IFormValidateOptions, IFormValuesMap } from './models';
 
 validate.validators.custom = (value: any, options: any, key: any, attributes: any) => {
   if (!options) {
@@ -17,30 +17,26 @@ validate.validators.custom = (value: any, options: any, key: any, attributes: an
     options = { message: options };
   }
 
-  if (typeof options.message !== 'function' && options.message.indexOf('^') !== 0) {
-    options.message = '^' + options.message;
-  }
-
   return options.message || null;
 };
 
 class FormValidate {
-  public inputs: IFormInputsMap = {};
-  private options: ValidateOption = {};
+  public controls: IFormControlsMap = {};
+  private options: IFormValidateOptions = {};
   private considered: string[] = [];
   private rules: IFormRulesMap = {};
   private customRuleKeys: string[] = [];
   private values: IFormValuesMap = {};
   private valid = false;
 
-  constructor(rules: IFormRulesMap, options: ValidateOption = {}, defaultValues: IFormValuesMap = {}) {
+  constructor(rules: IFormRulesMap, options: IFormValidateOptions = {}, defaultValues: IFormValuesMap = {}) {
     this.rules = rules;
     this.options = options;
     this.considered = Object.keys(rules);
 
     this.valid = true;
     for (const key of this.considered) {
-      this.inputs[key] = new InputError();
+      this.controls[key] = new ControlError();
       this.values[key] = defaultValues[key] || null;
       if (this.rules[key].custom) {
         this.customRuleKeys[this.customRuleKeys.length] = key;
@@ -51,18 +47,18 @@ class FormValidate {
     const validationErrors = validate(this.values, this.rules, this.options);
     this.valid = !validationErrors;
     if (validationErrors) {
-      for (const inputKey of this.considered) {
-        this.inputs[inputKey].setErrors(validationErrors[inputKey] || []);
+      for (const controlKey of this.considered) {
+        this.controls[controlKey].setErrors(validationErrors[controlKey] || []);
       }
     }
   }
 
-  public get(inputName: string) {
-    return this.inputs[inputName] || null;
+  public get(controlName: string) {
+    return this.controls[controlName] || null;
   }
 
-  public getInputs() {
-    return this.inputs;
+  public getControls() {
+    return this.controls;
   }
 
   public getValid() {
@@ -77,16 +73,16 @@ class FormValidate {
     this._toggleTouchedWithCallback(false, callback);
   }
 
-  public validate(nativeEvent: { [key: string]: any }, callback: ((valid: boolean) => void) | null = null) {
-    const { target: input } = nativeEvent;
-    const { name, type } = input || {};
-    let { value } = input || {};
+  public validate(nativeEvent: { [key: string]: any }, callback: ((valid: boolean, controls: IFormControlsMap) => void) | null = null) {
+    const { target: control } = nativeEvent;
+    const { name, type } = control || {};
+    let { value } = control || {};
 
     if (!this.considered.includes(name)) {
       return;
     }
 
-    if (type === 'checkbox' && input.checked === false) {
+    if (type === 'checkbox' && control.checked === false) {
       value = null;
     }
     if (('' + value).trim() === '') {
@@ -97,7 +93,7 @@ class FormValidate {
     validate
       .async(this.values, this.rules, this.options)
       .then(() => {
-        this.inputs[name].updateValues(true, []);
+        this.controls[name].updateValues(true, []);
         this.valid = true;
       })
       .catch(validationErrors => {
@@ -105,25 +101,25 @@ class FormValidate {
           throw Error;
         }
         // validate currentlly change field
-        this.inputs[name].updateValues(true, validationErrors[name] || []);
+        this.controls[name].updateValues(true, validationErrors[name] || []);
 
         // update errors of all
         for (const key of this.customRuleKeys) {
-          this.inputs[key].setErrors(validationErrors[key] || []);
+          this.controls[key].updateValues(true, validationErrors[key] || []);
         }
 
         this.valid = false;
       })
       .finally(() => {
         if (callback) {
-          callback(this.valid);
+          callback(this.valid, this.controls);
         }
       });
   }
 
   private _toggleTouchedWithCallback(touchedState: boolean, callback: (valid: boolean) => void) {
-    for (const inputKey of this.considered) {
-      this.inputs[inputKey].setTouched(touchedState);
+    for (const controlKey of this.considered) {
+      this.controls[controlKey].setTouched(touchedState);
     }
     if (callback) {
       callback(this.valid);
