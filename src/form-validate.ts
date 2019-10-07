@@ -36,7 +36,7 @@ class FormValidate {
   }
 
   public addControl(controlName: string, rule: IFormRuleItem, defaultValue: string = '') {
-    this._addMultipleControls([controlName], { [controlName]: rule }, { [controlName]: defaultValue })
+    this._addMultipleControls([controlName], { [controlName]: rule }, { [controlName]: defaultValue });
   }
 
   public removeControl(controlName: string) {
@@ -83,7 +83,6 @@ class FormValidate {
     callback: ((valid: boolean, controls: IFormControlsMap) => void) | null = null,
   ) {
     setTimeout(() => {
-
       const { target: control } = nativeEvent;
       const { name, type } = control || {};
       let { value } = control || {};

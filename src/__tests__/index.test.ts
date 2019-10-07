@@ -19,8 +19,7 @@ describe('FormValidate instance check', () => {
       {},
       { username: 'john', password: 'password' },
     );
-  })
-
+  });
 
   const initFalseValidator = new FormValidate(
     {
@@ -98,7 +97,7 @@ describe('FormValidate instance check', () => {
 
     expect(Object.keys(validator.controls).length).toBe(1);
     expect(validator.controls.username).toBeUndefined();
-    
+
     expect(Object.keys(validator['rules']).length).toBe(1);
     expect(validator['rules'][removedField]).toBeUndefined();
 

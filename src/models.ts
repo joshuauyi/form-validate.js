@@ -9,7 +9,9 @@ export interface IFormValuesMap {
   [key: string]: string | null;
 }
 
-export interface IFormRuleItem{ [key: string]: any }
+export interface IFormRuleItem {
+  [key: string]: any;
+}
 
 export interface IFormRulesMap {
   [key: string]: IFormRuleItem;
