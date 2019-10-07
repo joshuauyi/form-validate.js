@@ -1,7 +1,8 @@
-import InputError from './input-error';
+import { AsyncValidateOption, ValidateOption } from 'validate.js';
+import ControlError from './control-error';
 
-export interface IFormInputsMap {
-  [key: string]: InputError;
+export interface IFormControlsMap {
+  [key: string]: ControlError;
 }
 
 export interface IFormValuesMap {
@@ -9,5 +10,7 @@ export interface IFormValuesMap {
 }
 
 export interface IFormRulesMap {
-  [key: string]: {};
+  [key: string]: { [key: string]: any };
 }
+
+export type IFormValidateOptions = ValidateOption & AsyncValidateOption;
