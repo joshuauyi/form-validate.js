@@ -9,8 +9,10 @@ export interface IFormValuesMap {
   [key: string]: string | null;
 }
 
+export interface IFormRuleItem{ [key: string]: any }
+
 export interface IFormRulesMap {
-  [key: string]: { [key: string]: any };
+  [key: string]: IFormRuleItem;
 }
 
 export type IFormValidateOptions = ValidateOption & AsyncValidateOption;
