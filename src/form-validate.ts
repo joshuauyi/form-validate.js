@@ -4,7 +4,7 @@
  * (c) 2019 Joshua Uyi
  */
 
-import {Promise} from 'es6-promise';
+import { Promise } from 'es6-promise';
 import validateJs from 'validate.js';
 import ControlError from './control-error';
 import { IFormControlsMap, IFormRuleItem, IFormRulesMap, IFormValidateOptions, IFormValuesMap } from './models';
@@ -45,6 +45,7 @@ validate.validators.customAsync = (value: any, options: any, key: string, attrib
     }
     options(resolve, reject);
   });
+
 };
 
 class FormValidate {
@@ -55,13 +56,12 @@ class FormValidate {
   private customRuleKeys: string[] = [];
   private values: IFormValuesMap = {};
   private valid = true;
-  private errors: any = {};
   // tslint:disable-next-line: variable-name
   private _reactComponent: any = null;
 
   constructor(rules: IFormRulesMap, options: IFormValidateOptions = {}, defaultValues: IFormValuesMap = {}) {
-    this.options = {...options};
-    this._addMultipleControls(Object.keys(rules), {...rules}, {...defaultValues});
+    this.options = { ...options };
+    this._addMultipleControls(Object.keys(rules), { ...rules }, { ...defaultValues });
   }
 
   public addControl(controlName: string, rule: IFormRuleItem, defaultValue: string = '') {
@@ -133,14 +133,15 @@ class FormValidate {
       }
       this.values = { ...this.values, [name]: value };
 
+      // place control in error mode if it has an async validation
       if (this.rules[name].hasOwnProperty('customAsync')) {
         this.controls[name].updateValues(true, []);
         this.controls[name].loading = true;
         this.valid = false;
-      }
 
-      if (this._reactComponent) {
-        this._reactComponent.setState({});
+        if (this._reactComponent) {
+          this._reactComponent.setState({});
+        }
       }
 
       validate
@@ -148,7 +149,6 @@ class FormValidate {
         .then(() => {
           this.controls[name].updateValues(true, []);
           controlIsLoading = false;
-          // this.valid = true;
         })
         .catch((err: any) => {
           if (err instanceof Error) {
@@ -162,21 +162,16 @@ class FormValidate {
 
             return;
           }
-
           const validationErrors = err || {};
-
 
           // validate currentlly change field
           const fieldErrors = validationErrors[name] || [];
           this.controls[name].updateValues(true, fieldErrors);
-          this.errors[name] = fieldErrors;
 
           // update errors of all customRule fields
           for (const key of this.customRuleKeys) {
             this.controls[key].updateValues(true, validationErrors[key] || []);
           }
-
-          // this.valid = false;
         })
         .finally(() => {
           this.controls[name].loading = controlIsLoading;
@@ -193,15 +188,14 @@ class FormValidate {
     }, 0);
   }
 
-  private updateValidState(){
-    for(let k of Object.keys(this.errors)){
-        const fieldErr = this.errors[k];
-        if (fieldErr && fieldErr[0]){
-          this.valid = true;
-          return;
-        }
+  private updateValidState() {
+    for (const key of Object.keys(this.controls)) {
+      if (this.controls[key].hasError() || this.controls[key].loading) {
+        this.valid = false;
+        return;
+      }
     }
-    this.valid = false;
+    this.valid = true;
   }
 
   private _addMultipleControls(controlNames: string[], rules: IFormRulesMap, defaultValues: IFormValuesMap = {}) {
@@ -224,7 +218,6 @@ class FormValidate {
     for (const controlKey of controlNames) {
       this.controls[controlKey].setErrors(validationErrors[controlKey] || []);
     }
-
   }
 
   private _toggleTouchedWithCallback(touchedState: boolean, callback: (valid: boolean) => void) {
