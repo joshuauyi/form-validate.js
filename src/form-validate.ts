@@ -4,9 +4,17 @@
  * (c) 2019 Joshua Uyi
  */
 
-import validate from 'validate.js';
+import {Promise} from 'es6-promise';
+import validateJs from 'validate.js';
 import ControlError from './control-error';
 import { IFormControlsMap, IFormRuleItem, IFormRulesMap, IFormValidateOptions, IFormValuesMap } from './models';
+
+const validate: any = validateJs;
+validate.Promise = Promise;
+
+const customAsyncTasks: any = {};
+
+const ASYNC_RESET_INDICATOR = '___ASYNC_RESET_INDICATOR_STRING_UNIQUE___';
 
 validate.validators.custom = (value: string, options: any, key: string, attributes: any) => {
   if (!options) {
@@ -20,6 +28,25 @@ validate.validators.custom = (value: string, options: any, key: string, attribut
   return options.message || null;
 };
 
+let synchronousValidation = true;
+validate.validators.customAsync = (value: any, options: any, key: string, attributes: any) => {
+  if (synchronousValidation) {
+    return null;
+  }
+
+  if (customAsyncTasks[key]) {
+    customAsyncTasks[key]();
+    delete customAsyncTasks[key];
+  }
+
+  return new validate.Promise((resolve: any, reject: any) => {
+    customAsyncTasks[key] = () => {
+      reject(ASYNC_RESET_INDICATOR);
+    }
+    options(resolve, reject);
+  });
+};
+
 class FormValidate {
   public controls: IFormControlsMap = {};
   private options: IFormValidateOptions = {};
@@ -27,12 +54,14 @@ class FormValidate {
   private rules: IFormRulesMap = {};
   private customRuleKeys: string[] = [];
   private values: IFormValuesMap = {};
-  private valid = false;
+  private valid = true;
+  private errors: any = {};
+  // tslint:disable-next-line: variable-name
+  private _reactComponent: any = null;
 
   constructor(rules: IFormRulesMap, options: IFormValidateOptions = {}, defaultValues: IFormValuesMap = {}) {
-    this.options = options;
-
-    this._addMultipleControls(Object.keys(rules), rules, defaultValues);
+    this.options = {...options};
+    this._addMultipleControls(Object.keys(rules), {...rules}, {...defaultValues});
   }
 
   public addControl(controlName: string, rule: IFormRuleItem, defaultValue: string = '') {
@@ -78,6 +107,10 @@ class FormValidate {
     this._toggleTouchedWithCallback(false, callback);
   }
 
+  public setReactComponent(component: any) {
+    this._reactComponent = component;
+  }
+
   public validate(
     nativeEvent: { [key: string]: any },
     callback: ((valid: boolean, controls: IFormControlsMap) => void) | null = null,
@@ -87,9 +120,10 @@ class FormValidate {
       const { name, type } = control || {};
       let { value } = control || {};
 
-      if (!this.considered.includes(name)) {
+      if (this.considered.indexOf(name) < 0) {
         return;
       }
+      let controlIsLoading = false;
 
       if (type === 'checkbox' && control.checked === false) {
         value = null;
@@ -99,32 +133,75 @@ class FormValidate {
       }
       this.values = { ...this.values, [name]: value };
 
+      if (this.rules[name].hasOwnProperty('customAsync')) {
+        this.controls[name].updateValues(true, []);
+        this.controls[name].loading = true;
+        this.valid = false;
+      }
+
+      if (this._reactComponent) {
+        this._reactComponent.setState({});
+      }
+
       validate
-        .async(this.values, this.rules, this.options)
+        .async({ [name]: value }, { [name]: this.rules[name] }, this.options)
         .then(() => {
           this.controls[name].updateValues(true, []);
-          this.valid = true;
+          controlIsLoading = false;
+          // this.valid = true;
         })
-        .catch(validationErrors => {
-          if (validationErrors instanceof Error) {
-            throw Error;
+        .catch((err: any) => {
+          if (err instanceof Error) {
+            throw err;
           }
+
+          controlIsLoading = false;
+          if (err === ASYNC_RESET_INDICATOR) {
+            controlIsLoading = true;
+            this.controls[name].loading = true;
+
+            return;
+          }
+
+          const validationErrors = err || {};
+
+
           // validate currentlly change field
-          this.controls[name].updateValues(true, validationErrors[name] || []);
+          const fieldErrors = validationErrors[name] || [];
+          this.controls[name].updateValues(true, fieldErrors);
+          this.errors[name] = fieldErrors;
 
           // update errors of all customRule fields
           for (const key of this.customRuleKeys) {
             this.controls[key].updateValues(true, validationErrors[key] || []);
           }
 
-          this.valid = false;
+          // this.valid = false;
         })
         .finally(() => {
+          this.controls[name].loading = controlIsLoading;
+
+          this.updateValidState();
+
+          if (this._reactComponent) {
+            this._reactComponent.setState({});
+          }
           if (callback) {
             callback(this.valid, this.controls);
           }
         });
     }, 0);
+  }
+
+  private updateValidState(){
+    for(let k of Object.keys(this.errors)){
+        const fieldErr = this.errors[k];
+        if (fieldErr && fieldErr[0]){
+          this.valid = true;
+          return;
+        }
+    }
+    this.valid = false;
   }
 
   private _addMultipleControls(controlNames: string[], rules: IFormRulesMap, defaultValues: IFormValuesMap = {}) {
@@ -139,11 +216,15 @@ class FormValidate {
     }
 
     // validate all fields
-    const validationErrors = validate(this.values, this.rules, this.options) || {};
-    this.valid = Object.keys(validationErrors).length === 0;
+    synchronousValidation = true;
+    const validationErrors = validate(defaultValues, rules, this.options) || {};
+    synchronousValidation = false;
+
+    this.valid = this.valid && Object.keys(validationErrors).length === 0;
     for (const controlKey of controlNames) {
       this.controls[controlKey].setErrors(validationErrors[controlKey] || []);
     }
+
   }
 
   private _toggleTouchedWithCallback(touchedState: boolean, callback: (valid: boolean) => void) {

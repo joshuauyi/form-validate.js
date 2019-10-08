@@ -1,6 +1,7 @@
 class ControlError {
   public touched = false;
   public errors: string[] = [];
+  public loading = false;
 
   constructor(touched = false, errors = []) {
     this.touched = touched;
