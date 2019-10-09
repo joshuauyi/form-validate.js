@@ -1,4 +1,4 @@
-import { AsyncValidateOption, ValidateOption } from 'validate.js';
+import { AsyncValidateOption, ValidateJS, ValidateOption } from 'validate.js';
 import ControlError from './control-error';
 
 export interface IFormControlsMap {
@@ -17,4 +17,13 @@ export interface IFormRulesMap {
   [key: string]: IFormRuleItem;
 }
 
-export type IFormValidateOptions = ValidateOption & AsyncValidateOption;
+interface IInstanceCountOption {
+  instanceCount?: number;
+}
+
+export type IFormValidateOptions = ValidateOption & AsyncValidateOption & IInstanceCountOption;
+
+export interface IValidateJS extends ValidateJS {
+  Promise?: any;
+}
+

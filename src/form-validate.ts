@@ -7,16 +7,18 @@
 import { Promise } from 'es6-promise';
 import validateJs from 'validate.js';
 import ControlError from './control-error';
-import { IFormControlsMap, IFormRuleItem, IFormRulesMap, IFormValidateOptions, IFormValuesMap } from './models';
+import { IFormControlsMap, IFormRuleItem, IFormRulesMap, IFormValidateOptions, IFormValuesMap, IValidateJS } from './models';
 
-const validate: any = validateJs;
+const validate: IValidateJS = validateJs;
 validate.Promise = Promise;
 
 const customAsyncTasks: any = {};
-
-const ASYNC_RESET_INDICATOR = '___ASYNC_RESET_INDICATOR_STRING_UNIQUE___';
+const ASYNC_RESET_INDICATOR = '___ASYNC_RESET_INDICATOR_UNIQUE_STRING___';
+let synchronousValidation = true;
+let instanceCount = 0;
 
 validate.validators.custom = (value: string, options: any, key: string, attributes: any) => {
+
   if (!options) {
     return null;
   }
@@ -28,39 +30,43 @@ validate.validators.custom = (value: string, options: any, key: string, attribut
   return options.message || null;
 };
 
-let synchronousValidation = true;
-validate.validators.customAsync = (value: any, options: any, key: string, attributes: any) => {
+validate.validators.customAsync = (value: any, options: any, key: string, attributes: any, globalOptions: IFormValidateOptions) => {
   if (synchronousValidation) {
     return null;
   }
 
-  if (customAsyncTasks[key]) {
-    customAsyncTasks[key]();
-    delete customAsyncTasks[key];
+  const asyncFuncKey = key + globalOptions.instanceCount;
+
+  if (customAsyncTasks[asyncFuncKey]) {
+    customAsyncTasks[asyncFuncKey]();
+    delete customAsyncTasks[asyncFuncKey];
   }
 
   return new validate.Promise((resolve: any, reject: any) => {
-    customAsyncTasks[key] = () => {
+    customAsyncTasks[asyncFuncKey] = () => {
       reject(ASYNC_RESET_INDICATOR);
     }
-    options(resolve, reject);
+    options(resolve);
   });
 
 };
 
+// tslint:disable-next-line: max-classes-per-file
 class FormValidate {
   public controls: IFormControlsMap = {};
   private options: IFormValidateOptions = {};
   private considered: string[] = [];
   private rules: IFormRulesMap = {};
   private customRuleKeys: string[] = [];
+  private customAsyncRuleKeys: string[] = [];
   private values: IFormValuesMap = {};
   private valid = true;
   // tslint:disable-next-line: variable-name
   private _reactComponent: any = null;
 
   constructor(rules: IFormRulesMap, options: IFormValidateOptions = {}, defaultValues: IFormValuesMap = {}) {
-    this.options = { ...options };
+    this.options = { ...options, instanceCount: ++instanceCount };
+
     this._addMultipleControls(Object.keys(rules), { ...rules }, { ...defaultValues });
   }
 
@@ -74,6 +80,7 @@ class FormValidate {
     delete this.values[controlName];
     this.considered = this.considered.filter(item => item !== controlName);
     this.customRuleKeys = this.customRuleKeys.filter(item => item !== controlName);
+    this.customAsyncRuleKeys = this.customAsyncRuleKeys.filter(item => item !== controlName);
   }
 
   public get(controlName: string) {
@@ -108,6 +115,9 @@ class FormValidate {
   }
 
   public setReactComponent(component: any) {
+    if (!component.setState) {
+      return;
+    }
     this._reactComponent = component;
   }
 
@@ -135,22 +145,33 @@ class FormValidate {
 
       // place control in error mode if it has an async validation
       if (this.rules[name].hasOwnProperty('customAsync')) {
-        this.controls[name].updateValues(true, []);
         this.controls[name].loading = true;
-        this.valid = false;
+        this.updateValidState();
 
         if (this._reactComponent) {
           this._reactComponent.setState({});
         }
       }
 
+      const toValidateRules = Object.assign({}, this.rules);
+
+      for (const asyncValidatorKey of this.customAsyncRuleKeys) {
+        if (asyncValidatorKey !== name) {
+          toValidateRules[asyncValidatorKey] = Object.assign({}, toValidateRules[asyncValidatorKey], { customAsync: null });
+        }
+      }
+
+      let foundErrors: any = {};
       validate
-        .async({ [name]: value }, { [name]: this.rules[name] }, this.options)
+        .async(this.values, toValidateRules, this.options)
+        // .async({ [name]: value }, { [name]: this.rules[name] }, this.options)
         .then(() => {
-          this.controls[name].updateValues(true, []);
+          this.controls[name].setTouched(true).setErrors([]);
           controlIsLoading = false;
+
         })
         .catch((err: any) => {
+
           if (err instanceof Error) {
             throw err;
           }
@@ -158,23 +179,22 @@ class FormValidate {
           controlIsLoading = false;
           if (err === ASYNC_RESET_INDICATOR) {
             controlIsLoading = true;
-            this.controls[name].loading = true;
+            this.controls[name].setLoading(true);
 
             return;
           }
-          const validationErrors = err || {};
+          foundErrors = err || {};
 
           // validate currentlly change field
-          const fieldErrors = validationErrors[name] || [];
-          this.controls[name].updateValues(true, fieldErrors);
-
-          // update errors of all customRule fields
-          for (const key of this.customRuleKeys) {
-            this.controls[key].updateValues(true, validationErrors[key] || []);
-          }
+          this.controls[name].setTouched(true).setErrors(foundErrors[name] || []);
         })
         .finally(() => {
-          this.controls[name].loading = controlIsLoading;
+          // update errors of all customRule fields
+          for (const key of this.customRuleKeys) {
+            this.controls[key].setTouched(true).setErrors(foundErrors[key] || []);
+          }
+
+          this.controls[name].setLoading(controlIsLoading);
 
           this.updateValidState();
 
@@ -189,8 +209,8 @@ class FormValidate {
   }
 
   private updateValidState() {
-    for (const key of Object.keys(this.controls)) {
-      if (this.controls[key].hasError() || this.controls[key].loading) {
+    for (const key of this.considered) {
+      if (this.controls[key].hasError() || this.controls[key].isLoading()) {
         this.valid = false;
         return;
       }
@@ -202,10 +222,13 @@ class FormValidate {
     this.considered = [...this.considered, ...controlNames];
     this.rules = { ...this.rules, ...rules };
     for (const key of controlNames) {
-      this.controls[key] = new ControlError();
       this.values[key] = defaultValues[key] || null;
+      this.controls[key] = new ControlError(key, this.values[key]);
       if (this.rules[key].custom && Object.keys(this.rules[key]).length === 1) {
-        this.customRuleKeys[this.customRuleKeys.length] = key;
+        this.customRuleKeys.push(key);
+      }
+      if (this.rules[key].customAsync) {
+        this.customAsyncRuleKeys.push(key);
       }
     }
 
