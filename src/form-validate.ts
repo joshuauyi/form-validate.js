@@ -7,7 +7,14 @@
 import { Promise } from 'es6-promise';
 import validateJs from 'validate.js';
 import FormControl from './form-control';
-import { IFormControlsMap, IFormRuleItem, IFormRulesMap, IFormValidateOptions, IFormValuesMap, IValidateJS } from './models';
+import {
+  IFormControlsMap,
+  IFormRuleItem,
+  IFormRulesMap,
+  IFormValidateOptions,
+  IFormValuesMap,
+  IValidateJS,
+} from './models';
 
 const validate: IValidateJS = validateJs;
 validate.Promise = Promise;
@@ -18,7 +25,6 @@ let synchronousValidation = true;
 let instanceCount = 0;
 
 validate.validators.custom = (value: string, options: any, key: string, attributes: any) => {
-
   if (!options) {
     return null;
   }
@@ -30,7 +36,13 @@ validate.validators.custom = (value: string, options: any, key: string, attribut
   return options.message || null;
 };
 
-validate.validators.customAsync = (value: any, options: any, key: string, attributes: any, globalOptions: IFormValidateOptions) => {
+validate.validators.customAsync = (
+  value: any,
+  options: any,
+  key: string,
+  attributes: any,
+  globalOptions: IFormValidateOptions,
+) => {
   if (synchronousValidation) {
     return null;
   }
@@ -42,18 +54,16 @@ validate.validators.customAsync = (value: any, options: any, key: string, attrib
     delete customAsyncTasks[asyncFuncKey];
   }
 
-
   return new validate.Promise((resolve: any, reject: any) => {
     customAsyncTasks[asyncFuncKey] = () => {
       reject(ASYNC_RESET_INDICATOR);
-    }
+    };
     if (typeof options === 'function') {
       options(resolve);
     } else {
       resolve(options);
     }
   });
-
 };
 
 class FormValidate {
@@ -164,7 +174,9 @@ class FormValidate {
       // only process async validator of field currently edited, mark others as false
       for (const asyncValidatorKey of this.customAsyncRuleKeys) {
         if (asyncValidatorKey !== name) {
-          toValidateRules[asyncValidatorKey] = Object.assign({}, toValidateRules[asyncValidatorKey], { customAsync: null });
+          toValidateRules[asyncValidatorKey] = Object.assign({}, toValidateRules[asyncValidatorKey], {
+            customAsync: null,
+          });
         }
       }
 
@@ -258,7 +270,10 @@ class FormValidate {
     }
   }
 
-  private _toggleTouchedWithCallback(touchedState: boolean, callback: (valid: boolean, controls: IFormControlsMap) => void) {
+  private _toggleTouchedWithCallback(
+    touchedState: boolean,
+    callback: (valid: boolean, controls: IFormControlsMap) => void,
+  ) {
     for (const controlKey of this.considered) {
       this.controls[controlKey].setTouched(touchedState);
     }

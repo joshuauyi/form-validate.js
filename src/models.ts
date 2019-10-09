@@ -26,4 +26,3 @@ export type IFormValidateOptions = ValidateOption & AsyncValidateOption & IInsta
 export interface IValidateJS extends ValidateJS {
   Promise?: any;
 }
-

@@ -41,7 +41,7 @@ describe('FormValidate instance check', () => {
     expect(validator).toBeInstanceOf(FormValidate);
   });
 
-  test('validates successfully',async  () => {
+  test('validates successfully', async () => {
     await validator.validate({ target: { name: 'username', value: 'Jane' } }, isValid => {
       expect(isValid).toBeTruthy();
     });

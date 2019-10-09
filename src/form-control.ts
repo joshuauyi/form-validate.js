@@ -25,9 +25,9 @@ class FormControl {
 
   /**
    * @deprecated
-   * 
+   *
    * @param touched
-   * @param errors 
+   * @param errors
    */
   public _updateValues(touched: boolean, errors: string[]) {
     this.touched = touched;
@@ -37,7 +37,7 @@ class FormControl {
   public hasError(): boolean {
     return this.errors.length > 0;
   }
-  
+
   public isLoading(): boolean {
     return this.loading;
   }
