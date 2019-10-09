@@ -1,6 +1,7 @@
-class ControlError {
+class FormControl {
   public touched = false;
   public errors: string[] = [];
+  public loading = false;
 
   constructor(touched = false, errors = []) {
     this.touched = touched;
@@ -9,19 +10,36 @@ class ControlError {
 
   public setTouched(touched: boolean) {
     this.touched = touched;
+    return this;
   }
 
   public setErrors(errors: string[]) {
     this.errors = errors;
+    return this;
   }
 
-  public updateValues(touched: boolean, errors: string[]) {
+  public setLoading(loading: boolean) {
+    this.loading = loading;
+    return this;
+  }
+
+  /**
+   * @deprecated
+   *
+   * @param touched
+   * @param errors
+   */
+  public _updateValues(touched: boolean, errors: string[]) {
     this.touched = touched;
     this.errors = errors;
   }
 
-  public hasError() {
+  public hasError(): boolean {
     return this.errors.length > 0;
+  }
+
+  public isLoading(): boolean {
+    return this.loading;
   }
 
   public touchedAndHasError() {
@@ -29,4 +47,4 @@ class ControlError {
   }
 }
 
-export default ControlError;
+export default FormControl;
