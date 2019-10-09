@@ -6,7 +6,7 @@
 
 import { Promise } from 'es6-promise';
 import validateJs from 'validate.js';
-import ControlError from './control-error';
+import FormControl from './form-control';
 import { IFormControlsMap, IFormRuleItem, IFormRulesMap, IFormValidateOptions, IFormValuesMap, IValidateJS } from './models';
 
 const validate: IValidateJS = validateJs;
@@ -42,16 +42,20 @@ validate.validators.customAsync = (value: any, options: any, key: string, attrib
     delete customAsyncTasks[asyncFuncKey];
   }
 
+
   return new validate.Promise((resolve: any, reject: any) => {
     customAsyncTasks[asyncFuncKey] = () => {
       reject(ASYNC_RESET_INDICATOR);
     }
-    options(resolve);
+    if (typeof options === 'function') {
+      options(resolve);
+    } else {
+      resolve(options);
+    }
   });
 
 };
 
-// tslint:disable-next-line: max-classes-per-file
 class FormValidate {
   public controls: IFormControlsMap = {};
   private options: IFormValidateOptions = {};
@@ -75,6 +79,10 @@ class FormValidate {
   }
 
   public removeControl(controlName: string) {
+    if (!this.considered.includes(controlName)) {
+      return;
+    }
+
     delete this.rules[controlName];
     delete this.controls[controlName];
     delete this.values[controlName];
@@ -138,14 +146,12 @@ class FormValidate {
       if (type === 'checkbox' && control.checked === false) {
         value = null;
       }
-      if (('' + value).trim() === '') {
-        value = null;
-      }
+
       this.values = { ...this.values, [name]: value };
 
       // place control in error mode if it has an async validation
       if (this.rules[name].hasOwnProperty('customAsync')) {
-        this.controls[name].loading = true;
+        this.controls[name].setLoading(true);
         this.updateValidState();
 
         if (this._reactComponent) {
@@ -155,6 +161,7 @@ class FormValidate {
 
       const toValidateRules = Object.assign({}, this.rules);
 
+      // only process async validator of field currently edited, mark others as false
       for (const asyncValidatorKey of this.customAsyncRuleKeys) {
         if (asyncValidatorKey !== name) {
           toValidateRules[asyncValidatorKey] = Object.assign({}, toValidateRules[asyncValidatorKey], { customAsync: null });
@@ -164,19 +171,13 @@ class FormValidate {
       let foundErrors: any = {};
       validate
         .async(this.values, toValidateRules, this.options)
-        // .async({ [name]: value }, { [name]: this.rules[name] }, this.options)
         .then(() => {
           this.controls[name].setTouched(true).setErrors([]);
-          controlIsLoading = false;
-
         })
         .catch((err: any) => {
-
           if (err instanceof Error) {
             throw err;
           }
-
-          controlIsLoading = false;
           if (err === ASYNC_RESET_INDICATOR) {
             controlIsLoading = true;
             this.controls[name].setLoading(true);
@@ -199,10 +200,15 @@ class FormValidate {
           this.updateValidState();
 
           if (this._reactComponent) {
-            this._reactComponent.setState({});
-          }
-          if (callback) {
-            callback(this.valid, this.controls);
+            this._reactComponent.setState({}, () => {
+              if (callback) {
+                callback(this.valid, this.controls);
+              }
+            });
+          } else {
+            if (callback) {
+              callback(this.valid, this.controls);
+            }
           }
         });
     }, 0);
@@ -223,10 +229,19 @@ class FormValidate {
     this.rules = { ...this.rules, ...rules };
     for (const key of controlNames) {
       this.values[key] = defaultValues[key] || null;
-      this.controls[key] = new ControlError(key, this.values[key]);
+      this.controls[key] = new FormControl();
       if (this.rules[key].custom && Object.keys(this.rules[key]).length === 1) {
         this.customRuleKeys.push(key);
       }
+
+      if (this.rules[key].presence) {
+        if (this.rules[key].presence === true) {
+          this.rules[key].presence = { allowEmpty: false };
+        } else if (typeof this.rules[key].presence === 'object') {
+          this.rules[key].presence = { allowEmpty: false, ...this.rules[key].presence };
+        }
+      }
+
       if (this.rules[key].customAsync) {
         this.customAsyncRuleKeys.push(key);
       }
@@ -243,12 +258,21 @@ class FormValidate {
     }
   }
 
-  private _toggleTouchedWithCallback(touchedState: boolean, callback: (valid: boolean) => void) {
+  private _toggleTouchedWithCallback(touchedState: boolean, callback: (valid: boolean, controls: IFormControlsMap) => void) {
     for (const controlKey of this.considered) {
       this.controls[controlKey].setTouched(touchedState);
     }
-    if (callback) {
-      callback(this.valid);
+
+    if (this._reactComponent) {
+      this._reactComponent.setState({}, () => {
+        if (callback) {
+          callback(this.valid, this.controls);
+        }
+      });
+    } else {
+      if (callback) {
+        callback(this.valid, this.controls);
+      }
     }
   }
 }

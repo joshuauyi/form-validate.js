@@ -41,8 +41,8 @@ describe('FormValidate instance check', () => {
     expect(validator).toBeInstanceOf(FormValidate);
   });
 
-  test('validates successfully', () => {
-    validator.validate({ target: { name: 'username', value: 'Jane' } }, isValid => {
+  test('validates successfully',async  () => {
+    await validator.validate({ target: { name: 'username', value: 'Jane' } }, isValid => {
       expect(isValid).toBeTruthy();
     });
   });
@@ -57,8 +57,8 @@ describe('FormValidate instance check', () => {
     expect(initFalseValidator.getValid()).toBeFalsy();
   });
 
-  test('empty values should be false', () => {
-    validator.validate({ target: { name: 'username', value: '  ' } }, isValid => {
+  test('empty values should be false', async () => {
+    await validator.validate({ target: { name: 'username', value: '  ' } }, isValid => {
       expect(isValid).toBeFalsy();
     });
   });

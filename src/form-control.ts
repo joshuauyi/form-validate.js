@@ -1,25 +1,11 @@
-class ControlError {
-  public name: string;
-  public value: any;
+class FormControl {
   public touched = false;
   public errors: string[] = [];
   public loading = false;
 
-  constructor(name: string, value: any = null, touched = false, errors = []) {
-    this.name = name;
-    this.value = value;
+  constructor(touched = false, errors = []) {
     this.touched = touched;
     this.errors = errors;
-  }
-
-  public setName(name: string) {
-    this.name = name;
-    return this;
-  }
-
-  public setValue(value: string) {
-    this.value = value;
-    return this;
   }
 
   public setTouched(touched: boolean) {
@@ -61,4 +47,4 @@ class ControlError {
   }
 }
 
-export default ControlError;
+export default FormControl;
