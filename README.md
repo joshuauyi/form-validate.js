@@ -1,13 +1,13 @@
 # form-validate.js
 
-form-validate.js is a form validation library, it was built keeping react in mind, however can be used with all forms.
+form-validate.js is a form validation library, it was built keeping react in mind, however, can be used with all forms.
 
-### Introduction
+## Introduction
 
-form-validate.js was create to give an effective yet convenient way of validating forms (primarily in react components). The library is flexible and gives you control of its effects including what errors are shown, its styling, and flow.
+form-validate.js was created to give an effective yet convenient way of validating forms (primarily in react components). The library is flexible and gives you control of its effects including what errors are shown, it's styling, and flow.
 _Scroll to the bottom of this page to see a sample react component with form validation_
 
-### Requirements
+## Requirements
 
 - Node and npm
 - Transpilation (conventionally with babel). [create-react-app](https://github.com/facebook/create-react-app) has this setup already.
@@ -18,11 +18,11 @@ _Scroll to the bottom of this page to see a sample react component with form val
 
 ## Dependency
 
-form-validate.js relies on [validate.js](https://github.com/ansman/validate.js) for its validation rules and is shipped together with the libarary.
+form-validate.js relies on [validate.js](https://github.com/ansman/validate.js) for its validation rules and is shipped together with the library.
 
 ## Usage
 
-_The examples in this doc are targeted for react, however the principles can be applied to forms using other tools_
+_The examples in this doc are targeted for react however, the principles can be applied to forms using other tools_
 
 #### Validating forms
 
@@ -40,7 +40,7 @@ const validator = new FormValidate(<constraints>, <options>, <defaultValues>);
 
 > **constraints** is an object holding validation rules.
 >
-> **Note**: all rules are based on [validate.js](https://github.com/ansman/validate.js) rules, access the docs [here](https://validatejs.org/#validators) to know what rules are usabled and how to customize validation error messages. However there are two rules **custom** and **customAsync** perculiar to form-validate.js
+> **Note**: all rules are based on [validate.js](https://github.com/ansman/validate.js) rules, access the docs [here](https://validatejs.org/#validators) to know what rules are usable and how to customize validation error messages. However, there are two rules **custom** and **customAsync** peculiar to form-validate.js
 
 ```javascript
 const constraint = {
@@ -58,7 +58,7 @@ const constraint = {
 
 > **options** _(optional)_ is an object which indicates how the validate.js library handles validation errors and messages. Allowed options include **fullMessages**, **prettify** and **format** as seen [here](https://validatejs.org/#validate)
 
-> **defaultValues** _(optioinal)_ an object which indicates the values to be validated against initially, if not provided, all field values would be treated initally as null.
+> **defaultValues** _(optional)_ an object which indicates the values to be validated against initially, if not provided, all field values would be treated as null.
 
 ```javascript
 const defaultValues = {
@@ -71,7 +71,7 @@ const defaultValues = {
 
 with the custom rule, you can have validation based on conditions you provide, simply return a string or array of messages of the error if validation fails or null if validation passes
 
-customAsync rule makes you perform validation asynchronously incase you need to call endpoint to validate a field. To do this, return a function in which you resolve a string or array of messages if validation fails or simple call `resolve()` if there are no errors. You can still return plain values, in which case customAsync handles the validation as syncrounouse
+customAsync rule makes you perform validation asynchronously in case you need to call endpoint to validate a field. To do this, return a function in which you resolve a string or array of messages if validation fails or simple call `resolve()` if there are no errors. You can still return plain values, in which case customAsync handles the validation as synchronous
 Sample custom and customAsync rules are shown below
 
 ```javascript
@@ -101,12 +101,12 @@ const constraint = {
 };
 ```
 
-> **Note:** custom constraint can be used on a control not associated with any input provided it is the only contriain specified
+> custom constraint can be used on a control not associated with any input, provided it is the only constrain specified on the control
 
-> **Note:** in customAsync, return a function taking resolve as an argument, resolve should be called to indicate validation is done passing in the validation errors or without any argument if the validation passes.
+> customAsync should return a function taking resolve as an argument, resolve should be called to indicate validation is done passing in the validation errors or without any argument if the validation passes.
 
 - **Using the validator**
-  Ensure the name of the input field corresponds to the object key in the validation constriants otherwise the validator would not be associated with an input field, unless it meets the condition to act as a stand alone custom validator as stated above
+  Ensure the name of the input field corresponds to the object key in the validation constraints otherwise, the validator would not be associated with an input field unless it meets the condition to act as a stand-alone custom validator as stated above
 
 ```javascript
 <input type="text" name="username" />
@@ -138,7 +138,7 @@ The errors can be displayed in a react app as follows
 
 > **Note:** the _touched_ check should be done, otherwise errors would show up without the user interacting with the form.
 
-> **Note:** in a react app, ensure to call the `validator.setReactComponent` function to the indicate the component containing the form, this is very important and should be done in the component's contructor
+> **Note:** in a react app, ensure to call the `validator.setReactComponent` function to indicate the component containing the form, this is very important and should be done in the component's constructor
 
 ```javascript
 constructor(props) {
@@ -159,24 +159,24 @@ onChange = event => {
 };
 ```
 
-A check can also be added on submit of the form, incase the user tends to bypase onchange validation. Conventionally, all errors should show up after submitting the form, this can be done by calling the `validator.touchAll(callback)` function in the onsubmit handler which bypassing the touched check
+A check can also be added on submit of the form, in case the user tends to bypass onchange validation. Conventionally, all errors should show up after submitting the form, this can be done by calling the `validator.touchAll(callback)` function in the onsubmit handler which bypassing the touched check
 
 ```javascript
 onSubmit  = (event) => {
-	event.preventDefault();
-	if (!validator.valid) {
-		validator.touchAll((valid, controls) => {
-			// a good place to update the validation being displayed, this is automatically done in a react app, provided the associated component was declared
-		});
-		return;
-	}
-	...
+    event.preventDefault();
+    if (!validator.valid) {
+        validator.touchAll((valid, controls) => {
+            // a good place to update the validation being displayed, this is automatically done in a react app, provided the associated component was declared
+        });
+        return;
+    }
+    ...
 }
 ```
 
 ### Custom and Variable controls
 
-You may have a need to include custom contraints later on in your code, luckily, form-validator.js provides a means of accomplishing this, you can always add controls and contraints using the `validator.addControl` function and remoe existing ones with `validator.removeControl` at appropriate places in your code
+You may need to include custom contraints later on in your code, luckily, form-validator.js provides a means of accomplishing this, you can always add controls and contraints using the `validator.addControl` function and remove existing ones with `validator.removeControl` at appropriate places in your code
 
 validator.addControl takes in 3 arguements, **controlName**, **rule** and **defaultValue**
 validator.removeControl takes in only the **controlName** as an argument
@@ -187,7 +187,7 @@ validator.addControl('my-custom-control', {presence: true}, 'default-value');
 validator.removeControl('existing-control');
 ```
 
-**See example of full react component with form validation below**
+**See an example of full react component with form validation below**
 
 ```javascript
 import React from 'react';
@@ -220,7 +220,7 @@ const constraint = {
     },
   },
   unique: {
-    // custom validation can work on controls not associate with an input field if it is the only rule specified, otherwise it must be associated with an input field
+    // custom validation can work on controls not associate with an input field if it is the only rule specified otherwise, it must be associated with an input field
     custom: (value, attributes, attributeName, options, constraints) => {
       if (attributes.username === attributes.password) {
         return '^the username and password cannot be thesame';
@@ -261,7 +261,7 @@ class Component extends React.Component {
           <div>{controls.password.errors[0]}</div>
           <div>{controls.unique.touched && controls.unique.errors[0]}</div>
           {/* disable submit button based on the form valid state */}
-          <button disabled={!validator.valid}>Submit</button>
+          <button disabled={!validator.isValid()}>Submit</button>
         </form>
       </div>
     );

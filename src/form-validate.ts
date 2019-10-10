@@ -4,7 +4,6 @@
  * (c) 2019 Joshua Uyi
  */
 
-import { Promise } from 'es6-promise';
 import validateJs from 'validate.js';
 import FormControl from './form-control';
 import {
@@ -14,6 +13,7 @@ import {
   IFormValidateOptions,
   IFormValuesMap,
   IValidateJS,
+  IValidationCallback,
 } from './models';
 
 const validate: IValidateJS = validateJs;
@@ -124,11 +124,11 @@ class FormValidate {
     this.controls[controlName].setTouched(true);
   }
 
-  public touchAll(callback: (valid: boolean) => void) {
+  public touchAll(callback: IValidationCallback = null) {
     this._toggleTouchedWithCallback(true, callback);
   }
 
-  public unTouchAll(callback: (valid: boolean) => void) {
+  public unTouchAll(callback: IValidationCallback = null) {
     this._toggleTouchedWithCallback(false, callback);
   }
 
@@ -139,10 +139,17 @@ class FormValidate {
     this._reactComponent = component;
   }
 
-  public validate(
-    nativeEvent: { [key: string]: any },
-    callback: ((valid: boolean, controls: IFormControlsMap) => void) | null = null,
-  ) {
+  public reset() {
+    for (const controlName of this.considered) {
+      this.controls[controlName]
+        .setErrors([])
+        .setLoading(false)
+        .setTouched(false);
+    }
+    this.valid = false;
+  }
+
+  public validate(nativeEvent: { [key: string]: any }, callback: IValidationCallback = null) {
     setTimeout(() => {
       const { target: control } = nativeEvent;
       const { name, type } = control || {};
@@ -153,11 +160,20 @@ class FormValidate {
       }
       let controlIsLoading = false;
 
-      if (type === 'checkbox' && control.checked === false) {
+      if (type === 'checkbox' && !control.checked) {
         value = null;
       }
 
       this.values = { ...this.values, [name]: value };
+
+      const toValidateRules = { ...this.rules };
+
+      // only process async validator of field currently edited, mark others as false
+      for (const asyncValidatorKey of this.customAsyncRuleKeys) {
+        if (asyncValidatorKey !== name) {
+          toValidateRules[asyncValidatorKey] = { ...toValidateRules[asyncValidatorKey], customAsync: null };
+        }
+      }
 
       // place control in error mode if it has an async validation
       if (this.rules[name].hasOwnProperty('customAsync')) {
@@ -166,17 +182,6 @@ class FormValidate {
 
         if (this._reactComponent) {
           this._reactComponent.setState({});
-        }
-      }
-
-      const toValidateRules = Object.assign({}, this.rules);
-
-      // only process async validator of field currently edited, mark others as false
-      for (const asyncValidatorKey of this.customAsyncRuleKeys) {
-        if (asyncValidatorKey !== name) {
-          toValidateRules[asyncValidatorKey] = Object.assign({}, toValidateRules[asyncValidatorKey], {
-            customAsync: null,
-          });
         }
       }
 
@@ -198,7 +203,7 @@ class FormValidate {
           }
           foundErrors = err || {};
 
-          // validate currentlly change field
+          // validate currently change field
           this.controls[name].setTouched(true).setErrors(foundErrors[name] || []);
         })
         .finally(() => {
@@ -270,10 +275,7 @@ class FormValidate {
     }
   }
 
-  private _toggleTouchedWithCallback(
-    touchedState: boolean,
-    callback: (valid: boolean, controls: IFormControlsMap) => void,
-  ) {
+  private _toggleTouchedWithCallback(touchedState: boolean, callback: IValidationCallback = null) {
     for (const controlKey of this.considered) {
       this.controls[controlKey].setTouched(touchedState);
     }
@@ -291,4 +293,5 @@ class FormValidate {
     }
   }
 }
+
 export default FormValidate;

@@ -1,48 +1,45 @@
 import FormValidate from '../form-validate';
 
 // tslint:disable: no-string-literal
-let validator: FormValidate;
-describe('FormValidate instance check', () => {
-  beforeEach(() => {
-    validator = new FormValidate(
-      {
-        username: {
-          presence: true,
-        },
-        password: {
-          presence: true,
-          length: {
-            minimum: 6,
-          },
-        },
-      },
-      {},
-      { username: 'john', password: 'password' },
-    );
-  });
-
-  const initFalseValidator = new FormValidate(
-    {
-      username: {
-        presence: true,
-      },
-      password: {
-        presence: true,
-        length: {
-          minimum: 6,
-        },
+const validator: FormValidate = new FormValidate(
+  {
+    username: {
+      presence: true,
+    },
+    password: {
+      presence: true,
+      length: {
+        minimum: 6,
       },
     },
-    {},
-    { username: 'john' },
-  );
+  },
+  {},
+  { username: 'john', password: 'password' },
+);
 
+const initFalseValidator = new FormValidate(
+  {
+    username: {
+      presence: true,
+    },
+    password: {
+      presence: true,
+      length: {
+        minimum: 6,
+      },
+    },
+  },
+  {},
+  { username: 'john' },
+);
+
+describe('FormValidate instance check', () => {
   test('is instance of FormValidate', () => {
     expect(validator).toBeInstanceOf(FormValidate);
   });
 
-  test('validates successfully', async () => {
-    await validator.validate({ target: { name: 'username', value: 'Jane' } }, isValid => {
+  test('validates successfully', () => {
+    validator.validate({ target: { name: 'username', value: 'Jane' } }, isValid => {
       expect(isValid).toBeTruthy();
     });
   });
@@ -52,13 +49,13 @@ describe('FormValidate instance check', () => {
     expect(validator.get('gender')).toBeNull();
   });
 
-  test('validates immediate validator is instanciated', () => {
-    expect(validator.getValid()).toBeTruthy();
-    expect(initFalseValidator.getValid()).toBeFalsy();
+  test('validates immediate validator is instantiated', () => {
+    expect(validator.isValid()).toBeTruthy();
+    expect(initFalseValidator.isValid()).toBeFalsy();
   });
 
-  test('empty values should be false', async () => {
-    await validator.validate({ target: { name: 'username', value: '  ' } }, isValid => {
+  test('empty values should be false', () => {
+    validator.validate({ target: { name: 'username', value: '  ' } }, isValid => {
       expect(isValid).toBeFalsy();
     });
   });
@@ -83,28 +80,37 @@ describe('FormValidate instance check', () => {
   });
 
   test('can add control', () => {
-    validator.addControl('gemn', { presence: true });
+    const v3 = new FormValidate({
+      name: { presence: true },
+    });
 
-    expect(validator.controls.gemn).toBeDefined();
-    expect(Object.keys(validator.controls).length).toBe(3);
-    expect(Object.keys(validator['rules']).length).toBe(3);
-    expect(validator['considered'].length).toBe(3);
+    v3.addControl('gemn', { presence: true });
+
+    expect(v3.controls.gemn).toBeDefined();
+    expect(Object.keys(v3.controls).length).toBe(2);
+    expect(Object.keys(v3['rules']).length).toBe(2);
+    expect(v3['considered'].length).toBe(2);
   });
 
   test('can remove control', () => {
+    const v4 = new FormValidate({
+      username: { presence: true },
+      email: { presence: true },
+    });
+
     const removedField = 'username';
-    validator.removeControl(removedField);
+    v4.removeControl(removedField);
 
-    expect(Object.keys(validator.controls).length).toBe(1);
-    expect(validator.controls.username).toBeUndefined();
+    expect(Object.keys(v4.controls).length).toBe(1);
+    expect(v4.controls.username).toBeUndefined();
 
-    expect(Object.keys(validator['rules']).length).toBe(1);
-    expect(validator['rules'][removedField]).toBeUndefined();
+    expect(Object.keys(v4['rules']).length).toBe(1);
+    expect(v4['rules'][removedField]).toBeUndefined();
 
-    expect(Object.keys(validator['values']).length).toBe(1);
-    expect(validator['values'][removedField]).toBeUndefined();
+    expect(Object.keys(v4['values']).length).toBe(1);
+    expect(v4['values'][removedField]).toBeUndefined();
 
-    expect(validator['considered'].length).toBe(1);
-    expect(validator['considered'].includes(removedField)).toBeFalsy();
+    expect(v4['considered'].length).toBe(1);
+    expect(v4['considered'].indexOf(removedField)).toBeLessThan(0);
   });
 });

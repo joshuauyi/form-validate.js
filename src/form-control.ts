@@ -23,17 +23,6 @@ class FormControl {
     return this;
   }
 
-  /**
-   * @deprecated
-   *
-   * @param touched
-   * @param errors
-   */
-  public _updateValues(touched: boolean, errors: string[]) {
-    this.touched = touched;
-    this.errors = errors;
-  }
-
   public hasError(): boolean {
     return this.errors.length > 0;
   }
@@ -44,6 +33,18 @@ class FormControl {
 
   public touchedAndHasError() {
     return this.touched && this.hasError();
+  }
+
+  public untouchedAndHasError() {
+    return !this.touched && this.hasError();
+  }
+
+  public touchedAndWithoutError() {
+    return this.touched && !this.hasError();
+  }
+
+  public untouchedAndWithoutError() {
+    return !this.touched && !this.hasError();
   }
 }
 

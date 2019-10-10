@@ -1,6 +1,6 @@
 {
   "name": "form-validate.js",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Form validation library",
   "author": "Joshua Uyi <joshuaouyi@gmail.com>",
   "main": "lib/form-validate.js",
@@ -30,12 +30,12 @@
     "validator"
   ],
   "devDependencies": {
-    "@babel/cli": "^7.6.2",
-    "@babel/core": "^7.6.2",
+    "@babel/cli": "^7.6.4",
+    "@babel/core": "^7.6.4",
     "@babel/plugin-proposal-class-properties": "^7.5.5",
     "@babel/plugin-proposal-numeric-separator": "^7.2.0",
     "@babel/plugin-proposal-object-rest-spread": "^7.6.2",
-    "@babel/preset-env": "^7.6.2",
+    "@babel/preset-env": "^7.6.3",
     "@babel/preset-typescript": "^7.6.0",
     "@types/jest": "^24.0.18",
     "jest": "^24.9.0",
@@ -43,11 +43,10 @@
     "ts-jest": "^24.1.0",
     "tslint": "^5.20.0",
     "tslint-config-prettier": "^1.18.0",
-    "typescript": "^3.6.3"
+    "typescript": "^3.6.4"
   },
   "license": "MIT",
   "dependencies": {
-    "es6-promise": "^4.2.8",
     "validate.js": "^0.13.1"
   }
 }
