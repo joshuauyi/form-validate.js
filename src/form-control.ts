@@ -35,15 +35,15 @@ class FormControl {
     return this.touched && this.hasError();
   }
 
-  public untouchedAndHasError(){
+  public untouchedAndHasError() {
     return !this.touched && this.hasError();
   }
 
-  public touchedAndWithoutError(){
+  public touchedAndWithoutError() {
     return this.touched && !this.hasError();
   }
 
-  public untouchedAndWithoutError(){
+  public untouchedAndWithoutError() {
     return !this.touched && !this.hasError();
   }
 }

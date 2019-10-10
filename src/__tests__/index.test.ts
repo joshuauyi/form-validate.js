@@ -34,7 +34,6 @@ const initFalseValidator = new FormValidate(
 );
 
 describe('FormValidate instance check', () => {
-
   test('is instance of FormValidate', () => {
     expect(validator).toBeInstanceOf(FormValidate);
   });

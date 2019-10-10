@@ -141,15 +141,15 @@ class FormValidate {
 
   public reset() {
     for (const controlName of this.considered) {
-      this.controls[controlName].setErrors([]).setLoading(false).setTouched(false);
+      this.controls[controlName]
+        .setErrors([])
+        .setLoading(false)
+        .setTouched(false);
     }
     this.valid = false;
   }
 
-  public validate(
-    nativeEvent: { [key: string]: any },
-    callback: IValidationCallback = null,
-  ) {
+  public validate(nativeEvent: { [key: string]: any }, callback: IValidationCallback = null) {
     setTimeout(() => {
       const { target: control } = nativeEvent;
       const { name, type } = control || {};
@@ -275,10 +275,7 @@ class FormValidate {
     }
   }
 
-  private _toggleTouchedWithCallback(
-    touchedState: boolean,
-    callback: IValidationCallback = null
-  ) {
+  private _toggleTouchedWithCallback(touchedState: boolean, callback: IValidationCallback = null) {
     for (const controlKey of this.considered) {
       this.controls[controlKey].setTouched(touchedState);
     }
