@@ -6,8 +6,8 @@
   "main": "lib/form-validate.js",
   "types": "lib/form-validate.d.ts",
   "scripts": {
+    "start": "tsc --watch",
     "build": "tsc",
-    "watch": "tsc --watch",
     "test": "jest --config jestconfig.json --detectOpenHandles",
     "test-watch": "jest --config jestconfig.json --watch",
     "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",

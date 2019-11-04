@@ -33,84 +33,152 @@ const initFalseValidator = new FormValidate(
   { username: 'john' },
 );
 
-describe('FormValidate instance check', () => {
-  test('is instance of FormValidate', () => {
-    expect(validator).toBeInstanceOf(FormValidate);
-  });
+describe('FormValidate', () => {
+  describe('instance', () => {
+    it('should be an instance of FormValidate', () => {
+      expect(validator).toBeInstanceOf(FormValidate);
+    });
 
-  test('validates successfully', () => {
-    validator.validate({ target: { name: 'username', value: 'Jane' } }, isValid => {
-      expect(isValid).toBeTruthy();
+    it('should validate successfully', done => {
+      validator.validate({ target: { name: 'username', value: 'Jane' } }, isValid => {
+        expect(isValid).toBeTruthy();
+        done();
+      });
+    });
+
+    it('should add defined input objects', () => {
+      expect(validator.get('username')).toBeDefined();
+      expect(validator.get('gender')).toBeNull();
+    });
+
+    it('should validate immediate validator is instantiated', () => {
+      const vt = new FormValidate({ name: { presence: true }, gender: { presence: true } }, {}, { name: 'james', gender: 'Male' });
+      const vf = new FormValidate({ name: { presence: true }, gender: { presence: true } });
+      expect(vt.valid()).toBeTruthy();
+      expect(vf.valid()).toBeFalsy();
+    });
+
+    it('should be false when empty values are validated', done => {
+      validator.validate({ target: { name: 'username', value: '  ' } }, isValid => {
+        expect(isValid).toBeFalsy();
+        done();
+      });
     });
   });
 
-  test('added input objects', () => {
-    expect(validator.get('username')).toBeDefined();
-    expect(validator.get('gender')).toBeNull();
-  });
 
-  test('validates immediate validator is instantiated', () => {
-    expect(validator.isValid()).toBeTruthy();
-    expect(initFalseValidator.isValid()).toBeFalsy();
-  });
+  describe('attribute with custom rule', () => {
+    it('should be added to customRules array', () => {
+      const v2 = new FormValidate({
+        name: { presence: true },
+        gender: { custom: 'should be selected' },
+        age: { custom: '18 and above' },
+      });
 
-  test('empty values should be false', () => {
-    validator.validate({ target: { name: 'username', value: '  ' } }, isValid => {
-      expect(isValid).toBeFalsy();
+      expect(v2['customRuleKeys'].length).toBe(2);
+    });
+
+    it('should still be added to customRules array if it is the only rule', () => {
+      const v2 = new FormValidate({
+        name: { presence: true, custom: 'should be selected' },
+        gender: { custom: 'should be selected' },
+      });
+
+      expect(v2['customRuleKeys'].length).toBe(1);
     });
   });
 
-  test('adds attributes with custom rule to customRules array', () => {
-    const v2 = new FormValidate({
-      name: { presence: true },
-      gender: { custom: 'should be selected' },
-      age: { custom: '18 and above' },
-    });
+  describe('addControl', () => {
+    it('should add a control to FormValidate instance', () => {
+      const v3 = new FormValidate({
+        name: { presence: true },
+      });
 
-    expect(v2['customRuleKeys'].length).toBe(2);
+      v3.addControl('gemn', { presence: true });
+
+      expect(v3.controls.gemn).toBeDefined();
+      expect(Object.keys(v3.controls).length).toBe(2);
+      expect(Object.keys(v3['rules']).length).toBe(2);
+      expect(v3['considered'].length).toBe(2);
+    });
   });
 
-  test('adds attributes having only custom validator as a rule to customRules array', () => {
-    const v2 = new FormValidate({
-      name: { presence: true, custom: 'should be selected' },
-      gender: { custom: 'should be selected' },
-    });
+  describe('removeControl', () => {
+    it('should remove specified control', () => {
+      const v4 = new FormValidate({
+        username: { presence: true },
+        email: { presence: true },
+      });
 
-    expect(v2['customRuleKeys'].length).toBe(1);
+      const removedField = 'username';
+      v4.removeControl(removedField);
+
+      expect(Object.keys(v4.controls).length).toBe(1);
+      expect(v4.controls.username).toBeUndefined();
+
+      expect(Object.keys(v4['rules']).length).toBe(1);
+      expect(v4['rules'][removedField]).toBeUndefined();
+
+      expect(Object.keys(v4.values()).length).toBe(1);
+      expect(v4.values()[removedField]).toBeUndefined();
+
+      expect(v4['considered'].length).toBe(1);
+      expect(v4['considered'].indexOf(removedField)).toBeLessThan(0);
+    });
   });
 
-  test('can add control', () => {
-    const v3 = new FormValidate({
-      name: { presence: true },
+  describe('control with data-validate-control attribute', () => {
+
+    test('should use custom name passed in validate-control attribute as control name', done => {
+      const v5 = new FormValidate({
+        customControl: { presence: true },
+        email: { presence: true },
+      });
+
+      expect(v5.controls.customControl.errors.length).toBeGreaterThan(0);
+      v5.validate({ target: { name: 'username', value: 'john', 'data-validate-control': 'customControl' } }, (isValid, controls) => {
+        expect(controls.customControl.errors.length).toBe(0);
+        done();
+      });
     });
-
-    v3.addControl('gemn', { presence: true });
-
-    expect(v3.controls.gemn).toBeDefined();
-    expect(Object.keys(v3.controls).length).toBe(2);
-    expect(Object.keys(v3['rules']).length).toBe(2);
-    expect(v3['considered'].length).toBe(2);
   });
 
-  test('can remove control', () => {
-    const v4 = new FormValidate({
-      username: { presence: true },
-      email: { presence: true },
+
+  describe('presence constraint', () => {
+    it('should convert truthy presence constraint to object', () => {
+      const validator6 = new FormValidate({
+        username: {
+          presence: true,
+        },
+        gender: {
+          presence: false,
+        },
+        age: {
+          presence: { allowEmpty: true },
+        },
+        department: {
+          presence: { allowEmpty: false },
+        },
+        occupation: {
+          presence: {},
+        },
+      });
+
+      expect(typeof validator6['rules'].username.presence).toBe('object');
+      expect(validator6['rules'].username.presence.allowEmpty).toBeFalsy();
+
+      expect(typeof validator6['rules'].gender.presence).toBe('boolean');
+      expect(validator6['rules'].gender.presence).toBeFalsy();
+
+      expect(typeof validator6['rules'].age.presence).toBe('object');
+      expect(validator6['rules'].age.presence.allowEmpty).toBeTruthy();
+
+      expect(typeof validator6['rules'].department.presence).toBe('object');
+      expect(validator6['rules'].department.presence.allowEmpty).toBeFalsy();
+
+      expect(typeof validator6['rules'].occupation.presence).toBe('object');
+      expect(validator6['rules'].occupation.presence.allowEmpty).toBeFalsy();
     });
-
-    const removedField = 'username';
-    v4.removeControl(removedField);
-
-    expect(Object.keys(v4.controls).length).toBe(1);
-    expect(v4.controls.username).toBeUndefined();
-
-    expect(Object.keys(v4['rules']).length).toBe(1);
-    expect(v4['rules'][removedField]).toBeUndefined();
-
-    expect(Object.keys(v4['values']).length).toBe(1);
-    expect(v4['values'][removedField]).toBeUndefined();
-
-    expect(v4['considered'].length).toBe(1);
-    expect(v4['considered'].indexOf(removedField)).toBeLessThan(0);
   });
+
 });

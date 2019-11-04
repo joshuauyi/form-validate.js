@@ -4,6 +4,8 @@
  * (c) 2019 Joshua Uyi
  */
 
+// tslint:disable: variable-name
+
 import validateJs from 'validate.js';
 import FormControl from './form-control';
 import {
@@ -73,9 +75,11 @@ class FormValidate {
   private rules: IFormRulesMap = {};
   private customRuleKeys: string[] = [];
   private customAsyncRuleKeys: string[] = [];
-  private values: IFormValuesMap = {};
-  private valid = true;
-  // tslint:disable-next-line: variable-name
+  private _values: IFormValuesMap = {};
+  private _valid = true;
+  /**
+   * @deprecated
+   */
   private _reactComponent: any = null;
 
   constructor(rules: IFormRulesMap, options: IFormValidateOptions = {}, defaultValues: IFormValuesMap = {}) {
@@ -95,10 +99,11 @@ class FormValidate {
 
     delete this.rules[controlName];
     delete this.controls[controlName];
-    delete this.values[controlName];
+    delete this._values[controlName];
     this.considered = this.considered.filter(item => item !== controlName);
     this.customRuleKeys = this.customRuleKeys.filter(item => item !== controlName);
     this.customAsyncRuleKeys = this.customAsyncRuleKeys.filter(item => item !== controlName);
+    this.updateValidState();
   }
 
   public get(controlName: string) {
@@ -109,6 +114,10 @@ class FormValidate {
     return this.controls;
   }
 
+  public values(): IFormValuesMap {
+    return this._values;
+  }
+
   /**
    * @deprecated
    */
@@ -116,8 +125,19 @@ class FormValidate {
     return this.isValid();
   }
 
+  /**
+   * @deprecated
+   */
   public isValid() {
-    return this.valid;
+    return this.valid();
+  }
+
+  public valid() {
+    return this._valid;
+  }
+
+  public invalid() {
+    return !this._valid;
   }
 
   public touch(controlName: string, callback: (valid: boolean) => void) {
@@ -132,6 +152,10 @@ class FormValidate {
     this._toggleTouchedWithCallback(false, callback);
   }
 
+  /**
+   * @param component
+   * @deprecated
+   */
   public setReactComponent(component: any) {
     if (!component.setState) {
       return;
@@ -146,15 +170,34 @@ class FormValidate {
         .setLoading(false)
         .setTouched(false);
     }
-    this.valid = false;
+    this._valid = false;
+  }
+
+  public updateValues(values: IFormValuesMap) {
+    for (const key of this.considered) {
+      if (values[key] !== undefined) {
+        this._values[key] = values[key];
+      }
+    }
+    this._syncRevalidate(this.considered, this._values, this.rules);
   }
 
   public validate(nativeEvent: { [key: string]: any }, callback: IValidationCallback = null) {
     setTimeout(() => {
-      const { target: control } = nativeEvent;
-      const { name, type } = control || {};
-      let { value } = control || {};
+      const { target } = nativeEvent;
+      const control = target || {};
+      const { type } = control;
+      let { name, value } = control;
+      let formControlAttrName;
 
+      if (control.getAttribute) {
+        formControlAttrName = control.getAttribute('data-validate-control') || control.getAttribute('validate-control');
+      } else {
+        const { 'validate-control': formControl, 'data-validate-control': dataFormControl } = control;
+        formControlAttrName = dataFormControl || formControl;
+      }
+
+      name = formControlAttrName || name;
       if (this.considered.indexOf(name) < 0) {
         return;
       }
@@ -164,7 +207,7 @@ class FormValidate {
         value = null;
       }
 
-      this.values = { ...this.values, [name]: value };
+      this._values = { ...this._values, [name]: value };
 
       const toValidateRules = { ...this.rules };
 
@@ -180,14 +223,19 @@ class FormValidate {
         this.controls[name].setLoading(true);
         this.updateValidState();
 
+        // TODO: deprecated, remove logic
         if (this._reactComponent) {
           this._reactComponent.setState({});
+        }
+        //
+        if (callback) {
+          callback(this._valid, this.controls);
         }
       }
 
       let foundErrors: any = {};
       validate
-        .async(this.values, toValidateRules, this.options)
+        .async(this._values, toValidateRules, this.options)
         .then(() => {
           this.controls[name].setTouched(true).setErrors([]);
         })
@@ -216,17 +264,19 @@ class FormValidate {
 
           this.updateValidState();
 
+          // TODO: deprecated, remove logic
           if (this._reactComponent) {
             this._reactComponent.setState({}, () => {
               if (callback) {
-                callback(this.valid, this.controls);
+                callback(this._valid, this.controls);
               }
             });
-          } else {
-            if (callback) {
-              callback(this.valid, this.controls);
-            }
           }
+          //
+          if (callback) {
+            callback(this._valid, this.controls);
+          }
+
         });
     }, 0);
   }
@@ -234,18 +284,18 @@ class FormValidate {
   private updateValidState() {
     for (const key of this.considered) {
       if (this.controls[key].hasError() || this.controls[key].isLoading()) {
-        this.valid = false;
+        this._valid = false;
         return;
       }
     }
-    this.valid = true;
+    this._valid = true;
   }
 
   private _addMultipleControls(controlNames: string[], rules: IFormRulesMap, defaultValues: IFormValuesMap = {}) {
     this.considered = [...this.considered, ...controlNames];
     this.rules = { ...this.rules, ...rules };
     for (const key of controlNames) {
-      this.values[key] = defaultValues[key] || null;
+      this._values[key] = defaultValues[key] || null;
       this.controls[key] = new FormControl();
       if (this.rules[key].custom && Object.keys(this.rules[key]).length === 1) {
         this.customRuleKeys.push(key);
@@ -265,14 +315,18 @@ class FormValidate {
     }
 
     // validate all fields
+    this._syncRevalidate(controlNames, defaultValues, rules);
+  }
+
+  private _syncRevalidate(controls: string[], values: IFormValuesMap, rules: IFormRulesMap) {
     synchronousValidation = true;
-    const validationErrors = validate(defaultValues, rules, this.options) || {};
+    const validationErrors = validate(values, rules, this.options) || {};
     synchronousValidation = false;
 
-    this.valid = this.valid && Object.keys(validationErrors).length === 0;
-    for (const controlKey of controlNames) {
+    for (const controlKey of controls) {
       this.controls[controlKey].setErrors(validationErrors[controlKey] || []);
     }
+    this.updateValidState();
   }
 
   private _toggleTouchedWithCallback(touchedState: boolean, callback: IValidationCallback = null) {
@@ -280,17 +334,19 @@ class FormValidate {
       this.controls[controlKey].setTouched(touchedState);
     }
 
+    // TODO: deprecated, remove logic
     if (this._reactComponent) {
       this._reactComponent.setState({}, () => {
         if (callback) {
-          callback(this.valid, this.controls);
+          callback(this._valid, this.controls);
         }
       });
-    } else {
-      if (callback) {
-        callback(this.valid, this.controls);
-      }
     }
+    //
+    if (callback) {
+      callback(this._valid, this.controls);
+    }
+
   }
 }
 
