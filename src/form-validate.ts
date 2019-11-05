@@ -276,7 +276,6 @@ class FormValidate {
           if (callback) {
             callback(this._valid, this.controls);
           }
-
         });
     }, 0);
   }
@@ -346,7 +345,6 @@ class FormValidate {
     if (callback) {
       callback(this._valid, this.controls);
     }
-
   }
 }
 

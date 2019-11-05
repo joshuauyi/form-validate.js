@@ -52,7 +52,11 @@ describe('FormValidate', () => {
     });
 
     it('should validate immediate validator is instantiated', () => {
-      const vt = new FormValidate({ name: { presence: true }, gender: { presence: true } }, {}, { name: 'james', gender: 'Male' });
+      const vt = new FormValidate(
+        { name: { presence: true }, gender: { presence: true } },
+        {},
+        { name: 'james', gender: 'Male' },
+      );
       const vf = new FormValidate({ name: { presence: true }, gender: { presence: true } });
       expect(vt.valid()).toBeTruthy();
       expect(vf.valid()).toBeFalsy();
@@ -65,7 +69,6 @@ describe('FormValidate', () => {
       });
     });
   });
-
 
   describe('attribute with custom rule', () => {
     it('should be added to customRules array', () => {
@@ -128,7 +131,6 @@ describe('FormValidate', () => {
   });
 
   describe('control with data-validate-control attribute', () => {
-
     test('should use custom name passed in validate-control attribute as control name', done => {
       const v5 = new FormValidate({
         customControl: { presence: true },
@@ -136,13 +138,15 @@ describe('FormValidate', () => {
       });
 
       expect(v5.controls.customControl.errors.length).toBeGreaterThan(0);
-      v5.validate({ target: { name: 'username', value: 'john', 'data-validate-control': 'customControl' } }, (isValid, controls) => {
-        expect(controls.customControl.errors.length).toBe(0);
-        done();
-      });
+      v5.validate(
+        { target: { name: 'username', value: 'john', 'data-validate-control': 'customControl' } },
+        (isValid, controls) => {
+          expect(controls.customControl.errors.length).toBe(0);
+          done();
+        },
+      );
     });
   });
-
 
   describe('presence constraint', () => {
     it('should convert truthy presence constraint to object', () => {
@@ -180,5 +184,4 @@ describe('FormValidate', () => {
       expect(validator6['rules'].occupation.presence.allowEmpty).toBeFalsy();
     });
   });
-
 });
