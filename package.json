@@ -1,13 +1,13 @@
 {
   "name": "form-validate.js",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Form validation library",
   "author": "Joshua Uyi <joshuaouyi@gmail.com>",
   "main": "lib/form-validate.js",
   "types": "lib/form-validate.d.ts",
   "scripts": {
+    "start": "tsc --watch",
     "build": "tsc",
-    "watch": "tsc --watch",
     "test": "jest --config jestconfig.json --detectOpenHandles",
     "test-watch": "jest --config jestconfig.json --watch",
     "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",

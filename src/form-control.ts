@@ -39,11 +39,25 @@ class FormControl {
     return !this.touched && this.hasError();
   }
 
+  /**
+   * @deprecated
+   */
   public touchedAndWithoutError() {
+    return this.touchedAndNoError();
+  }
+
+  public touchedAndNoError() {
     return this.touched && !this.hasError();
   }
 
+  /**
+   * @deprecated
+   */
   public untouchedAndWithoutError() {
+    return this.untouchedAndNoError();
+  }
+
+  public untouchedAndNoError() {
     return !this.touched && !this.hasError();
   }
 }
