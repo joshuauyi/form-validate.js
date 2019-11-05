@@ -1,10 +1,10 @@
 # form-validate.js
 
-form-validate.js is a form validation library, it was built keeping react in mind, however, can be used with all forms.
+form-validate.js is a form validation library, for validating web client forms.
 
 ## Introduction
 
-form-validate.js was created to give an effective yet convenient way of validating forms (primarily in react components). The library is flexible and gives you control of its effects including what errors are shown, it's styling, and flow.
+form-validate.js was created to give an effective yet convenient way of validating forms (in react components and html). The library is flexible and gives you control of its effects including what errors are shown, it's styling, and flow.
 _Scroll to the bottom of this page to see a sample react component with form validation_
 
 ## Requirements
@@ -22,7 +22,7 @@ form-validate.js relies on [validate.js](https://github.com/ansman/validate.js) 
 
 ## Usage
 
-_The examples in this doc are targeted for react however, the principles can be applied to forms using other tools_
+_The examples in this doc are targeted for react however, the principles can be applied to forms using other tools including vanilla JS_
 
 #### Validating forms
 
@@ -106,13 +106,20 @@ const constraint = {
 > customAsync should return a function taking resolve as an argument, resolve should be called to indicate validation is done passing in the validation errors or without any argument if the validation passes.
 
 - **Using the validator**
-  Ensure the name of the input field corresponds to the object key in the validation constraints otherwise, the validator would not be associated with an input field unless it meets the condition to act as a stand-alone custom validator as stated above
+
+Ensure the name of the input field corresponds to the object key in the validation constraints otherwise, the validator would not be associated with an input field unless it meets the condition to act as a stand-alone custom validator as stated above
 
 ```javascript
 <input type="text" name="username" />
 ```
 
-> the validation instance has a controls property `validator.controls` that holds the control error object of each field. The control error object has three important fields
+If for any reason the name given to the input does not match the validation constraint key, use the `validate-control` or `data-validate-control` attribute on the input element to specify the constrian key the input is associated with.
+
+```javascript
+<input type="text" name="alt-input-name" validate-control="username" />
+```
+
+> the validation instance has a controls property `validator.controls` that holds the control object of each field. The control object has three important fields
 >
 > - **errors** - an array holding all validation errors of the field
 > - **touched** - indicating if the control field has been interacted with
@@ -121,12 +128,20 @@ const constraint = {
 getting a reference to a control associated with a field can be done thus
 
 ```javascript
-const usernameErrors = validator.controls.username.errors;
+const usernameControl = validator.controls.username;
 ```
 
-same can be done to access the touched property
+OR
 
 ```javascript
+const usernameControl = validator.get('username');
+```
+
+The errors, touched, loading and other properties and methods of the control can be access from the control object directly
+
+```javascript
+const usernameErrors = validator.controls.username.errors;
+
 const usernameTouched = validator.controls.username.touched;
 ```
 
@@ -136,25 +151,21 @@ The errors can be displayed in a react app as follows
 <div>{usernameTouched && usernameErrors.map((error, i) => <div key={i}>{error}</div>)}</div>
 ```
 
-> **Note:** the _touched_ check should be done, otherwise errors would show up without the user interacting with the form.
-
-> **Note:** in a react app, ensure to call the `validator.setReactComponent` function to indicate the component containing the form, this is very important and should be done in the component's constructor
-
-```javascript
-constructor(props) {
-  super(props);
-  validator.setReactComponent(this);
-}
-```
+> the _touched_ check should be done, otherwise errors would show up without the user interacting with the form.
 
 - **Validating a form**
-  To validate input values in a form, add an onChange listener to the form and call the validate method in its callback passing the event and a callback function to be executed once validation is done
+  To validate input values in a form, add an onChange listener to the form and call the validate method in its callback passing the event and a callback function to be executed once validation is done.
+  > **Note:** Other listeners e.g. onBlur can be used to perform validation at the occurence of corresponding events.
 
 ```javascript
 onChange = event => {
   // Note: in a react app, the event should be the native event which can be gotten with event.nativeEvent
+  // callback to be run once validation is done, the valid argument indicates if the form is valid or not, and controls is a collection of all form controls
   validator.validate(event.nativeEvent, (valid, controls) => {
-    // callback to be run once validation is done, the valid argument indicates if the form is valid or not, and controls is a collection of all form controls
+    // perform logic to display errors to the users here.
+    // in a react app this can be ass easy as setting the state to trigger a rerender.
+    // for a regular html form, certain elements can be updated to contain the validation error in controls; controls.get('control).errors;
+    this.setState({});
   });
 };
 ```
@@ -163,13 +174,15 @@ A check can also be added on submit of the form, in case the user tends to bypas
 
 ```javascript
 onSubmit  = (event) => {
-    event.preventDefault();
-    if (!validator.valid) {
-        validator.touchAll((valid, controls) => {
-            // a good place to update the validation being displayed, this is automatically done in a react app, provided the associated component was declared
-        });
-        return;
-    }
+  event.preventDefault();
+  if (!validator.valid) {
+      // Thesame callback used in the validate function can be used here
+    validator.touchAll((valid, controls) => {
+      // a good place to update the validation being displayed.
+      this.setState({});
+    });
+    return;
+  }
     ...
 }
 ```
@@ -187,7 +200,15 @@ validator.addControl('my-custom-control', {presence: true}, 'default-value');
 validator.removeControl('existing-control');
 ```
 
-**See an example of full react component with form validation below**
+## Deprecated methods
+- `validator.setReactComponent` 
+- `validator.getValid`
+- `validator.isValid`
+
+> Kindly follow the example in this docs to update and rerender error messages.
+
+
+#### See an example of full react component with form validation below
 
 ```javascript
 import React from 'react';
@@ -230,19 +251,12 @@ const constraint = {
   },
 };
 
-const validator = new FormValidate(constraint);
-
 class Component extends React.Component {
-  constructor(props) {
-    super(props);
-    // associate validator with the react component containing the form
-    // this is important if form-validator.js is being used with react
-    validator.setReactComponent(this);
-  }
+  validator = new FormValidate(constraint);
 
   render() {
     // destructure out the controls property
-    const { controls } = validator;
+    const { controls } = this.validator;
 
     return (
       <div>
@@ -261,7 +275,7 @@ class Component extends React.Component {
           <div>{controls.password.errors[0]}</div>
           <div>{controls.unique.touched && controls.unique.errors[0]}</div>
           {/* disable submit button based on the form valid state */}
-          <button disabled={!validator.isValid()}>Submit</button>
+          <button disabled={!this.validator.valid()}>Submit</button>
         </form>
       </div>
     );
@@ -269,16 +283,18 @@ class Component extends React.Component {
 
   validateForm = event => {
     // get nativeEvent out of the react change event.
-    validator.validate(event.nativeEvent, (valid, controls) => {
-      // perform actions after validation
+    this.validator.validate(event.nativeEvent, (valid, controls) => {
+      // rerender validation errors and perform actions after validation
+      this.setState({});
     });
   };
 
   onSubmit = event => {
     event.preventDefault();
-    if (!validator.valid) {
-      validator.touchAll((valid, controls) => {
-        // do something after touching all
+    if (!this.validator.valid) {
+      this.validator.touchAll((valid, controls) => {
+        // do something after touching all and rerender validation errors
+        this.setState({});
       });
       return;
     }
