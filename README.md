@@ -77,7 +77,7 @@ Sample custom and customAsync rules are shown below
 ```javascript
 const constraint = {
   username: {
-    customAsync: (value, attributes, attributeName, options, constraints) => {
+    customAsync: (value, attributes, attributeName) => {
       if (value && value.trim() === '') return;
       return function(resolve) {
         setTimeout(() => {
@@ -91,7 +91,7 @@ const constraint = {
     },
   },
   unique: {
-    custom: (value, attributes, attributeName, options, constraints) => {
+    custom: (value, attributes, attributeName) => {
       if (attributes.username === attributes.password) {
         return '^the username and password cannot be thesame';
       }
@@ -163,9 +163,9 @@ onChange = event => {
   // callback to be run once validation is done, the valid argument indicates if the form is valid or not, and controls is a collection of all form controls
   validator.validate(event.nativeEvent, (valid, controls) => {
     // perform logic to display errors to the users here.
-    // in a react app this can be ass easy as setting the state to trigger a rerender.
+    // in a react app this can be as easy as forcing the component to rerender.
     // for a regular html form, certain elements can be updated to contain the validation error in controls; controls.get('control).errors;
-    this.setState({});
+    this.forceUpdate();
   });
 };
 ```
@@ -175,11 +175,11 @@ A check can also be added on submit of the form, in case the user tends to bypas
 ```javascript
 onSubmit  = (event) => {
   event.preventDefault();
-  if (!validator.valid) {
+  if (!validator.valid()) {
       // Thesame callback used in the validate function can be used here
     validator.touchAll((valid, controls) => {
       // a good place to update the validation being displayed.
-      this.setState({});
+      this.forceUpdate();
     });
     return;
   }
@@ -191,7 +191,7 @@ onSubmit  = (event) => {
 
 You may need to include custom contraints later on in your code, luckily, form-validator.js provides a means of accomplishing this, you can always add controls and contraints using the `validator.addControl` function and remove existing ones with `validator.removeControl` at appropriate places in your code
 
-validator.addControl takes in 3 arguements, **controlName**, **rule** and **defaultValue**
+validator.addControl takes in 3 arguments, **controlName**, **rule** and **defaultValue**
 validator.removeControl takes in only the **controlName** as an argument
 
 ```javascript
@@ -205,8 +205,6 @@ validator.removeControl('existing-control');
 - `validator.getValid`
 - `validator.isValid`
 
-> Kindly follow the example in this docs to update and rerender error messages.
-
 
 #### See an example of full react component with form validation below
 
@@ -218,12 +216,13 @@ const constraint = {
   username: {
     presence: true,
     // async validation
-    customAsync: (value, attributes, attributeName, options, constraints) => {
-      // it is possible for value to be null or undefined
-      value = value || '';
-      if (value.trim() === '') return;
-
+    customAsync: (value, attributes, attributeName) => {
       return resolve => {
+        if (value.trim() === "") {
+          resolve();
+          return;
+        }
+
         setTimeout(() => {
           if (['joshua', 'john', 'rita'].includes(value)) {
             resolve('%{value} is taken');
@@ -242,7 +241,7 @@ const constraint = {
   },
   unique: {
     // custom validation can work on controls not associate with an input field if it is the only rule specified otherwise, it must be associated with an input field
-    custom: (value, attributes, attributeName, options, constraints) => {
+    custom: (value, attributes, attributeName) => {
       if (attributes.username === attributes.password) {
         return '^the username and password cannot be thesame';
       }
@@ -285,16 +284,16 @@ class Component extends React.Component {
     // get nativeEvent out of the react change event.
     this.validator.validate(event.nativeEvent, (valid, controls) => {
       // rerender validation errors and perform actions after validation
-      this.setState({});
+      this.forceUpdate();
     });
   };
 
   onSubmit = event => {
     event.preventDefault();
-    if (!this.validator.valid) {
+    if (!this.validator.valid()) {
       this.validator.touchAll((valid, controls) => {
         // do something after touching all and rerender validation errors
-        this.setState({});
+        this.forceUpdate();
       });
       return;
     }
