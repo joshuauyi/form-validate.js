@@ -348,4 +348,9 @@ class FormValidate {
   }
 }
 
+type FVWindow = (typeof window) & {
+  FormValidate: (typeof FormValidate);
+}
+
+(window as FVWindow).FormValidate = FormValidate;
 export default FormValidate;
