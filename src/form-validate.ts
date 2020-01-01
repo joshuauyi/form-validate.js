@@ -77,6 +77,7 @@ class FormValidate {
   private customAsyncRuleKeys: string[] = [];
   private _values: IFormValuesMap = {};
   private _valid = true;
+  private _renderCallback: IValidationCallback = null;
   /**
    * @deprecated
    */
@@ -142,12 +143,21 @@ class FormValidate {
 
   public touch(controlName: string, callback: (valid: boolean) => void) {
     this.controls[controlName].setTouched(true);
+    this.callRender();
   }
 
+  /**
+   *
+   * @param callback - callback param is deprecated and will be removed, use the render(callback) method
+   */
   public touchAll(callback: IValidationCallback = null) {
     this._toggleTouchedWithCallback(true, callback);
   }
 
+  /**
+   *
+   * @param callback - callback param is deprecated and will be removed, use the render(callback) method
+   */
   public unTouchAll(callback: IValidationCallback = null) {
     this._toggleTouchedWithCallback(false, callback);
   }
@@ -163,6 +173,10 @@ class FormValidate {
     this._reactComponent = component;
   }
 
+  public render(callback: IValidationCallback = null) {
+    this._renderCallback = callback;
+  }
+
   public reset() {
     for (const controlName of this.considered) {
       this.controls[controlName]
@@ -171,6 +185,8 @@ class FormValidate {
         .setTouched(false);
     }
     this._valid = false;
+
+    this.callRender();
   }
 
   public updateValues(values: IFormValuesMap) {
@@ -276,9 +292,16 @@ class FormValidate {
           if (callback) {
             callback(this._valid, this.controls);
           }
+          this.callRender();
         });
     }, 0);
   }
+
+  private callRender = () => {
+    if (this._renderCallback) {
+      this._renderCallback(this._valid, this.controls);
+    }
+  };
 
   private updateValidState() {
     for (const key of this.considered) {
@@ -288,6 +311,7 @@ class FormValidate {
       }
     }
     this._valid = true;
+    this.callRender();
   }
 
   private _addMultipleControls(controlNames: string[], rules: IFormRulesMap, defaultValues: IFormValuesMap = {}) {
@@ -341,11 +365,17 @@ class FormValidate {
         }
       });
     }
-    //
+
     if (callback) {
       callback(this._valid, this.controls);
     }
+    this.callRender();
   }
 }
 
+type FVWindow = (typeof window) & {
+  FormValidate: typeof FormValidate;
+};
+
+(window as FVWindow).FormValidate = FormValidate;
 export default FormValidate;
