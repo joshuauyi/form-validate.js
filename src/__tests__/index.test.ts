@@ -40,10 +40,11 @@ describe('FormValidate', () => {
     });
 
     it('should validate successfully', done => {
-      validator.validate({ target: { name: 'username', value: 'Jane' } }, isValid => {
+      validator.render(isValid => {
         expect(isValid).toBeTruthy();
         done();
       });
+      validator.validate({ target: { name: 'username', value: 'Jane' } });
     });
 
     it('should add defined input objects', () => {
@@ -63,10 +64,12 @@ describe('FormValidate', () => {
     });
 
     it('should be false when empty values are validated', done => {
-      validator.validate({ target: { name: 'username', value: '  ' } }, isValid => {
+      validator.render(isValid => {
         expect(isValid).toBeFalsy();
         done();
       });
+
+      validator.validate({ target: { name: 'username', value: '  ' } });
     });
   });
 
@@ -137,14 +140,13 @@ describe('FormValidate', () => {
         email: { presence: true },
       });
 
+      v5.render((isValid, controls) => {
+        expect(controls.customControl.errors.length).toBe(0);
+        done();
+      });
+
       expect(v5.controls.customControl.errors.length).toBeGreaterThan(0);
-      v5.validate(
-        { target: { name: 'username', value: 'john', 'data-validate-control': 'customControl' } },
-        (isValid, controls) => {
-          expect(controls.customControl.errors.length).toBe(0);
-          done();
-        },
-      );
+      v5.validate({ target: { name: 'username', value: 'john', 'data-validate-control': 'customControl' } });
     });
   });
 
