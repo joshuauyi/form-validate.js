@@ -17,11 +17,12 @@ export interface IFormRulesMap {
   [key: string]: IFormRuleItem;
 }
 
-interface IInstanceCountOption {
+interface ICustomValidateOption {
   instanceCount?: number;
+  syncValidateOnly?: boolean;
 }
 
-export type IFormValidateOptions = ValidateOption & AsyncValidateOption & IInstanceCountOption;
+export type IFormValidateOptions = ValidateOption & AsyncValidateOption & ICustomValidateOption;
 
 export interface IValidateJS extends ValidateJS {
   Promise?: any;

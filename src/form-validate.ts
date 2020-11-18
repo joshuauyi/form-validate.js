@@ -23,7 +23,6 @@ validate.Promise = Promise;
 
 const customAsyncTasks: any = {};
 const ASYNC_RESET_INDICATOR = '___ASYNC_RESET_INDICATOR_UNIQUE_STRING___';
-let synchronousValidation = true;
 let instanceCount = 0;
 
 validate.validators.custom = (value: string, options: any, key: string, attributes: any) => {
@@ -45,21 +44,25 @@ validate.validators.customAsync = (
   attributes: any,
   globalOptions: IFormValidateOptions,
 ) => {
-  if (synchronousValidation) {
+  if (globalOptions.syncValidateOnly === true){
     return null;
   }
 
   const asyncFuncKey = key + globalOptions.instanceCount;
 
+  // triggers a call the reject the previous async promise carrying a validation
+  // this is in turn handled by form validator to indicate the control is still loading
   if (customAsyncTasks[asyncFuncKey]) {
     customAsyncTasks[asyncFuncKey]();
     delete customAsyncTasks[asyncFuncKey];
   }
 
   return new validate.Promise((resolve: any, reject: any) => {
+    // function to reject async validation if another vaidation is reques is received based on user interaction
     customAsyncTasks[asyncFuncKey] = () => {
       reject(ASYNC_RESET_INDICATOR);
     };
+
     if (typeof options === 'function') {
       options(resolve);
     } else {
@@ -78,10 +81,6 @@ class FormValidate {
   private _values: IFormValuesMap = {};
   private _valid = true;
   private _renderCallback: IValidationCallback = null;
-  /**
-   * @deprecated
-   */
-  private _reactComponent: any = null;
 
   constructor(rules: IFormRulesMap, options: IFormValidateOptions = {}, defaultValues: IFormValuesMap = {}) {
     this.options = { ...options, instanceCount: ++instanceCount };
@@ -119,20 +118,6 @@ class FormValidate {
     return this._values;
   }
 
-  /**
-   * @deprecated
-   */
-  public getValid() {
-    return this.isValid();
-  }
-
-  /**
-   * @deprecated
-   */
-  public isValid() {
-    return this.valid();
-  }
-
   public valid() {
     return this._valid;
   }
@@ -146,31 +131,12 @@ class FormValidate {
     this.callRender();
   }
 
-  /**
-   *
-   * @param callback - callback param is deprecated and will be removed, use the render(callback) method
-   */
-  public touchAll(callback: IValidationCallback = null) {
-    this._toggleTouchedWithCallback(true, callback);
+  public touchAll() {
+    this._toggleTouchedWithCallback(true);
   }
 
-  /**
-   *
-   * @param callback - callback param is deprecated and will be removed, use the render(callback) method
-   */
-  public unTouchAll(callback: IValidationCallback = null) {
-    this._toggleTouchedWithCallback(false, callback);
-  }
-
-  /**
-   * @param component
-   * @deprecated
-   */
-  public setReactComponent(component: any) {
-    if (!component.setState) {
-      return;
-    }
-    this._reactComponent = component;
+  public unTouchAll() {
+    this._toggleTouchedWithCallback(false);
   }
 
   public render(callback: IValidationCallback = null) {
@@ -198,7 +164,7 @@ class FormValidate {
     this._syncRevalidate(this.considered, this._values, this.rules);
   }
 
-  public validate(nativeEvent: { [key: string]: any }, callback: IValidationCallback = null) {
+  public validate(nativeEvent: { [key: string]: any }) {
     setTimeout(() => {
       const { target } = nativeEvent;
       const control = target || {};
@@ -239,14 +205,7 @@ class FormValidate {
         this.controls[name].setLoading(true);
         this.updateValidState();
 
-        // TODO: deprecated, remove logic
-        if (this._reactComponent) {
-          this._reactComponent.setState({});
-        }
-        //
-        if (callback) {
-          callback(this._valid, this.controls);
-        }
+        this.callRender();
       }
 
       let foundErrors: any = {};
@@ -279,19 +238,6 @@ class FormValidate {
           this.controls[name].setLoading(controlIsLoading);
 
           this.updateValidState();
-
-          // TODO: deprecated, remove logic
-          if (this._reactComponent) {
-            this._reactComponent.setState({}, () => {
-              if (callback) {
-                callback(this._valid, this.controls);
-              }
-            });
-          }
-          //
-          if (callback) {
-            callback(this._valid, this.controls);
-          }
           this.callRender();
         });
     }, 0);
@@ -342,9 +288,9 @@ class FormValidate {
   }
 
   private _syncRevalidate(controls: string[], values: IFormValuesMap, rules: IFormRulesMap) {
-    synchronousValidation = true;
+    this.options.syncValidateOnly = true;
     const validationErrors = validate(values, rules, this.options) || {};
-    synchronousValidation = false;
+    this.options.syncValidateOnly = false;
 
     for (const controlKey of controls) {
       this.controls[controlKey].setErrors(validationErrors[controlKey] || []);
@@ -352,30 +298,12 @@ class FormValidate {
     this.updateValidState();
   }
 
-  private _toggleTouchedWithCallback(touchedState: boolean, callback: IValidationCallback = null) {
+  private _toggleTouchedWithCallback(touchedState: boolean) {
     for (const controlKey of this.considered) {
       this.controls[controlKey].setTouched(touchedState);
-    }
-
-    // TODO: deprecated, remove logic
-    if (this._reactComponent) {
-      this._reactComponent.setState({}, () => {
-        if (callback) {
-          callback(this._valid, this.controls);
-        }
-      });
-    }
-
-    if (callback) {
-      callback(this._valid, this.controls);
     }
     this.callRender();
   }
 }
 
-type FVWindow = (typeof window) & {
-  FormValidate: typeof FormValidate;
-};
-
-(window as FVWindow).FormValidate = FormValidate;
 export default FormValidate;
